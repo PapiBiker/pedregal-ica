@@ -21,7 +21,15 @@ function Login({ setIsAuthenticated }) {
         localStorage.setItem('nombre', data.nombre);
         localStorage.setItem('rol', data.rol);
         localStorage.setItem('userId', data.id);
-        setIsAuthenticated(true);
+
+        // Verificar el rol del usuario
+        if (data.rol === 'usuario') {
+          setError('No tienes los suficientes privilegios.');
+          localStorage.clear(); // Limpiar el almacenamiento local
+          setIsAuthenticated(false); // Cerrar sesión
+        } else {
+          setIsAuthenticated(true); // Permitir el acceso
+        }
       } else {
         setError('Error: Usuario o contraseña incorrectos.');
       }

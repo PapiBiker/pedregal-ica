@@ -3,18 +3,18 @@ import React, { useState, useEffect } from 'react';
 
 function Admin({ setIsAuthenticated, darkMode }) {
   const [users, setUsers] = useState([]);
-  // const [allReports, setAllReports] = useState([]); // Descomenta si necesitas esta lógica
-  // const [showAssignReportsModal, setShowAssignReportsModal] = useState(false);
   const [showAddUserModal, setShowAddUserModal] = useState(false);
-  // const [selectedUserForReports, setSelectedUserForReports] = useState(null);
-  // const [assignedReportsForSelectedUser, setAssignedReportsForSelectedUser] = useState(new Set());
+
+  // --- Nuevos estados para filtros ---
+  const [searchTerm, setSearchTerm] = useState(''); // Búsqueda por nombre
+  const [selectedProfileFilter, setSelectedProfileFilter] = useState(''); // Filtro por perfil
+  const [selectedStatusFilter, setSelectedStatusFilter] = useState(''); // Filtro por estado ('activo', 'inactivo', '')
 
   const [newUser, setNewUser] = useState({
     usuario: '',
     correo: '',
     nombre: '',
     perfil: '',
-    // estado: 'activo', // El backend lo establece en 'activo' por defecto al crear
     password: '',
   });
 
@@ -51,24 +51,21 @@ function Admin({ setIsAuthenticated, darkMode }) {
       if (response.status === 204 || options.method === 'DELETE') {
         return null;
       }
-      // Para respuestas que solo devuelven un mensaje y no un JSON completo de datos
       if (options.method === 'POST' && response.headers.get("content-type")?.includes("application/json")) {
-        // Si es un POST, y el backend devuelve un JSON (ej. {message: "..."}), lo parseamos
-        // Si no, y esperabas un objeto creado, tendrás que manejarlo diferente (como re-fetch)
         return await response.json(); 
       }
       return await response.json();
     } catch (error) {
       console.error(`Error en la operación para ${apiBaseUrl}${specificEndpoint}:`, error.message);
       alert(`Error en la operación: ${error.message}`);
-      throw error; // Re-lanza para que la función que llama pueda manejarlo
+      throw error;
     }
   };
 
   // --- USUARIOS ---
   const fetchUsers = async () => {
     try {
-      const data = await fetchData('/users'); // Usa el endpoint base de usuarios
+      const data = await fetchData('/users');
       setUsers(data || []);
     } catch (error) {
       // El alert de error ya se muestra en fetchData
@@ -76,12 +73,8 @@ function Admin({ setIsAuthenticated, darkMode }) {
   };
 
   useEffect(() => {
-    // const token = localStorage.getItem('token'); // Protección de ruta ya en App.jsx
-    // if (!token && setIsAuthenticated) {
-    //   setIsAuthenticated(false);
-    // }
     fetchUsers();
-  }, [setIsAuthenticated]); // Si usas setIsAuthenticated en el efecto
+  }, [setIsAuthenticated]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -94,7 +87,6 @@ function Admin({ setIsAuthenticated, darkMode }) {
       return;
     }
     try {
-      // Backend devuelve: { message: "Usuario creado" }
       await fetchData('/users', {
         method: 'POST',
         body: JSON.stringify({
@@ -103,12 +95,10 @@ function Admin({ setIsAuthenticated, darkMode }) {
             nombre: newUser.nombre,
             perfil: newUser.perfil,
             correo: newUser.correo,
-            // 'estado' es 'activo' por defecto en el backend
         }),
       });
-      // Como el backend no devuelve el usuario creado, volvemos a cargar la lista
       alert("Usuario creado con éxito.");
-      fetchUsers(); // Re-fetch para obtener la lista actualizada con el nuevo usuario (y su ID)
+      fetchUsers();
       setNewUser({ usuario: '', correo: '', nombre: '', perfil: '', password: '' });
       setShowAddUserModal(false);
     } catch (error) {
@@ -121,12 +111,8 @@ function Admin({ setIsAuthenticated, darkMode }) {
     if (!user) return;
 
     try {
-      // Backend devuelve: { message: "Estado actualizado a ${nuevoEstado}", estado: nuevoEstado }
       const responseData = await fetchData(`/users/desactivar/${userId}`, {
         method: 'PUT',
-        // El body no es estrictamente necesario para este endpoint de backend en particular,
-        // ya que el backend calcula el nuevo estado.
-        // Pero si el backend lo leyera, sería { estado: !user.estado }
       });
 
       if (responseData && responseData.estado !== undefined) {
@@ -137,7 +123,6 @@ function Admin({ setIsAuthenticated, darkMode }) {
         );
         alert(responseData.message || `Estado del usuario ${user.usuario} actualizado a ${responseData.estado}.`);
       } else {
-        // Si la respuesta no es la esperada, se podría re-fetch como fallback
         console.warn("Respuesta inesperada del backend al cambiar estado, re-cargando usuarios...");
         fetchUsers();
       }
@@ -146,27 +131,85 @@ function Admin({ setIsAuthenticated, darkMode }) {
     }
   };
 
-  // --- REPORTES (Lógica de asignación - Mantenida como estaba, asumiendo que los endpoints son correctos) ---
-  // Si esta lógica no es necesaria en Admin.jsx, se puede eliminar.
-  // const fetchAllReports = async () => { /* ... */ };
-  // useEffect(() => { fetchAllReports(); }, []);
-  // const handleOpenAssignReportsModal = async (user) => { /* ... */ };
-  // const handleToggleReportAssignment = async (reportId) => { /* ... */ };
+  // --- Lógica de filtrado y búsqueda ---
+  const getUniqueProfiles = () => {
+    const profiles = users.map(user => user.perfil).filter(Boolean);
+    return [...new Set(profiles)].sort(); // Eliminar duplicados y ordenar
+  };
 
+  const filteredUsers = users.filter(user => {
+    // 1. Filtrar por término de búsqueda (nombre del usuario)
+    const matchesSearch = user.nombre.toLowerCase().includes(searchTerm.toLowerCase());
+
+    // 2. Filtrar por perfil
+    const matchesProfile = selectedProfileFilter === '' || user.perfil === selectedProfileFilter;
+
+    // 3. Filtrar por estado
+    const matchesStatus = selectedStatusFilter === '' || user.estado?.toLowerCase() === selectedStatusFilter.toLowerCase();
+
+    return matchesSearch && matchesProfile && matchesStatus;
+  });
 
   return (
     <>
       <div className="container mt-4">
         <h1>Gestión de Usuarios</h1>
-        <button
-          className="btn btn-primary mb-3"
-          onClick={() => {
-            setNewUser({ usuario: '', correo: '', nombre: '', perfil: '', password: '' }); // Resetear al abrir
-            setShowAddUserModal(true);
-          }}
-        >
-          Agregar Usuario
-        </button>
+
+        {/* Controles de Filtrado y Búsqueda */}
+        <div className="card p-3 mb-3 shadow-sm">
+            <h5 className="mb-3">Filtros de búsqueda</h5>
+            <div className="row g-3">
+                <div className="col-md-4">
+                    <label htmlFor="searchName" className="form-label visually-hidden">Buscar por Nombre</label>
+                    <input
+                        type="text"
+                        className="form-control"
+                        id="searchName"
+                        placeholder="Buscar por Nombre"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                </div>
+                <div className="col-md-4">
+                    <label htmlFor="profileFilter" className="form-label visually-hidden">Filtrar por Perfil</label>
+                    <select
+                        id="profileFilter"
+                        className="form-select"
+                        value={selectedProfileFilter}
+                        onChange={(e) => setSelectedProfileFilter(e.target.value)}
+                    >
+                        <option value="">Todos los Perfiles</option>
+                        {getUniqueProfiles().map(profile => (
+                            <option key={profile} value={profile}>{profile}</option>
+                        ))}
+                    </select>
+                </div>
+                <div className="col-md-4">
+                    <label htmlFor="statusFilter" className="form-label visually-hidden">Filtrar por Estado</label>
+                    <select
+                        id="statusFilter"
+                        className="form-select"
+                        value={selectedStatusFilter}
+                        onChange={(e) => setSelectedStatusFilter(e.target.value)}
+                    >
+                        <option value="">Todos los Estados</option>
+                        <option value="activo">Activo</option>
+                        <option value="inactivo">Inactivo</option>
+                    </select>
+                </div>
+            </div>
+            <hr className="my-3" />
+            <button
+              className="btn btn-primary"
+              onClick={() => {
+                setNewUser({ usuario: '', correo: '', nombre: '', perfil: '', password: '' });
+                setShowAddUserModal(true);
+              }}
+            >
+              Agregar Usuario
+            </button>
+        </div>
+        
         <div className="table-responsive rounded shadow">
           <table className={`table table-striped `}>
             <thead>
@@ -180,35 +223,34 @@ function Admin({ setIsAuthenticated, darkMode }) {
               </tr>
             </thead>
             <tbody>
-              {users.map((user) => (
-                <tr key={user.id}>
-                  <td>{user.usuario}</td>
-                  <td>{user.correo || 'N/A'}</td> {/* Backend GET /users no devuelve correo, pero POST sí */}
-                  <td>{user.nombre}</td>
-                  <td>{user.perfil}</td>
-                  <td>
-                    <span className={`badge ${user.estado?.toLowerCase() === 'activo' ? 'bg-success' : 'bg-danger'}`}>
-                      {user.estado}
-                    </span>
-                  </td>
-                  <td>
-                    <button
-                      title={user.estado?.toLowerCase() === 'activo' ? 'Desactivar' : 'Activar'}
-                      className={`btn btn-sm me-2 ${user.estado?.toLowerCase() === 'activo' ? 'btn-outline-warning' : 'btn-outline-success'}`}
-                      onClick={() => toggleUserState(user.id)}
-                    >
-                      <i className={`bi ${user.estado?.toLowerCase() === 'activo' ? 'bi-person-fill-slash' : 'bi-person-fill-check'}`}></i>
-                      {/* {user.estado?.toLowerCase() === 'activo' ? 'Desactivar' : 'Activar'} */}
-                    </button>
-                    {/* <button
-                      className="btn btn-sm btn-info"
-                      onClick={() => handleOpenAssignReportsModal(user)}
-                    >
-                      Asignar Reportes
-                    </button> */}
-                  </td>
+              {filteredUsers.length > 0 ? (
+                filteredUsers.map((user) => (
+                  <tr key={user.id}>
+                    <td>{user.usuario}</td>
+                    <td>{user.correo || 'N/A'}</td>
+                    <td>{user.nombre}</td>
+                    <td>{user.perfil}</td>
+                    <td>
+                      <span className={`badge ${user.estado?.toLowerCase() === 'activo' ? 'bg-success' : 'bg-danger'}`}>
+                        {user.estado}
+                      </span>
+                    </td>
+                    <td>
+                      <button
+                        title={user.estado?.toLowerCase() === 'activo' ? 'Desactivar' : 'Activar'}
+                        className={`btn btn-sm me-2 ${user.estado?.toLowerCase() === 'activo' ? 'btn-outline-warning' : 'btn-outline-success'}`}
+                        onClick={() => toggleUserState(user.id)}
+                      >
+                        <i className={`bi ${user.estado?.toLowerCase() === 'activo' ? 'bi-person-fill-slash' : 'bi-person-fill-check'}`}></i>
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="6" className="text-center">No se encontraron usuarios que coincidan con los filtros.</td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>
@@ -244,7 +286,16 @@ function Admin({ setIsAuthenticated, darkMode }) {
                   </div>
                   <div className="mb-3">
                     <label className="form-label">Perfil</label>
-                    <input type="text" className="form-control" name="perfil" value={newUser.perfil} onChange={handleInputChange} required />
+                    {/* CAMBIO: Perfil ahora es un dropdown con opciones sugeridas */}
+                    <select className="form-select" name="perfil" value={newUser.perfil} onChange={handleInputChange} required>
+                        <option value="">Seleccione un perfil</option>
+                        {/* Puedes predefinir perfiles o generarlos dinámicamente si tienes muchos */}
+                        <option value="admin">Admin</option>
+                        <option value="operador">Operador</option>
+                        <option value="supervisor">Supervisor</option>
+                        {/* Agrega más opciones de perfil según sea necesario */}
+                        {/* También podrías generar estas opciones dinámicamente si los perfiles se obtienen de una API */}
+                    </select>
                   </div>
                   <div className="mb-3">
                     <label className="form-label">Contraseña</label>
@@ -260,9 +311,6 @@ function Admin({ setIsAuthenticated, darkMode }) {
           </div>
         </div>
       )}
-
-      {/* Modal para asignar reportes (Mantenido como estaba, si es necesario) */}
-      {/* {showAssignReportsModal && selectedUserForReports && ( ... tu modal de asignar reportes ... )} */}
     </>
   );
 }

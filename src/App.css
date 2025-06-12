@@ -1,30 +1,114 @@
+/* src/App.css */
 body {
   margin: 0;
-  font-family: Arial, sans-serif;
+  overflow-x: hidden; /* Prevenir scroll horizontal general */
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.5;
 }
 
-.dark-mode {
-  background-color: #121212;
-  color: #ffffff;
+/* Clases de tema para el BODY (aplicadas desde App.jsx) */
+.dark-mode-body {
+  background-color: #161b22; /* Un gris oscuro GitHub-like */
+  color: #c9d1d9; /* Texto claro grisáceo */
 }
 
-.light-mode {
-  background-color: #ffffff;
-  color: #000000;
+.light-mode-body {
+  background-color: #f6f8fa; /* Un gris muy claro */
+  color: #24292f; /* Texto oscuro principal */
 }
 
-.container-fluid {
+/* Contenedor principal de la aplicación */
+.app-container {
+  display: flex;
+  flex-direction: column;
   min-height: 100vh;
 }
 
-.row {
-  margin: 0;
+/* Layout principal que contiene sidebar y contenido */
+.main-layout-flex {
+  flex-grow: 1;
+  display: flex;
+  overflow: hidden; /* Previene doble scroll si el contenido interno lo maneja */
 }
 
-.col {
-  padding: 20px;
+/* Área principal de contenido */
+.main-content-area {
+  flex-grow: 1;
+  overflow-y: auto; /* Permite scroll solo para el contenido */
+  padding: 1rem; /* Padding general para el contenido */
 }
 
-.content {
-  padding: 20px;
+/* Ajuste para la navbar fija en móviles */
+@media (max-width: 767.98px) { /* Breakpoint md de Bootstrap */
+  .main-content-area {
+    /* Ajustar este valor a la altura de tu navbar móvil si es fixed-top o sticky-top */
+    /* Por ejemplo, si la navbar es de 56px de alto: */
+    /* padding-top: calc(56px + 1rem); */ 
+    /* Si la navbar no es fija/pegajosa, el padding-top normal de 1rem está bien */
+  }
+}
+
+/* Estilos para Navbar Móvil específica (si se usa en App.jsx) */
+.navbar-mobile-sticky { /* Añadir esta clase a la navbar móvil en App.jsx si es sticky */
+  position: sticky;
+  top: 0;
+  z-index: 1030; /* Estándar de Bootstrap para navbars fijas/sticky */
+}
+.bg-dark-custom-nav { 
+  background-color: #212529 !important; /* Bootstrap bg-dark */
+}
+.bg-light-custom-nav { 
+  background-color: #f8f9fa !important; /* Bootstrap bg-light */
+}
+
+
+/* Estilos para las tarjetas de personal en móviles (de Personal.jsx) */
+.persona-card-mobile {
+  font-size: 0.8rem; /* Ligeramente más grande para legibilidad */
+  border: 1px solid var(--bs-border-color-translucent); /* Usar variables de Bootstrap */
+}
+.persona-card-mobile .card-title {
+  font-size: 0.95rem;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+.persona-card-mobile .card-text {
+  margin-bottom: 0.3rem;
+  font-size: 0.75rem;
+}
+.persona-card-mobile .card-text strong {
+  min-width: 100px; /* Reducido un poco */
+  display: inline-block;
+  color: var(--bs-secondary-color); /* Usar color secundario de Bootstrap para labels */
+}
+
+/* Ajustes para que los encabezados de la tabla principal hagan wrap (de Personal.jsx) */
+/* Estos estilos ya están en el <style jsx global> de Personal.jsx, 
+   pero si quieres centralizarlos, aquí sería un buen lugar. 
+   Si los mantienes en Personal.jsx, asegúrate que funcionen. */
+/*
+.tabla-personal th {
+  white-space: normal !important;
+  word-break: break-word !important;
+  min-width: 75px; 
+  vertical-align: middle;
+  text-align: center;
+  font-size: 0.7rem !important;
+}
+.tabla-personal td {
+  font-size: 0.7rem !important;
+}
+*/
+
+/* Transiciones más sutiles (opcional) */
+a, button {
+  transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+/* Estilos para hacer los dropdowns un poco más modernos */
+.dropdown-menu {
+    border-radius: 0.375rem; /* Bootstrap 5 default border-radius */
+    /* box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important; */ /* Sombra estándar de Bootstrap */
 }

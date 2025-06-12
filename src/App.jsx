@@ -1,14 +1,12 @@
 // src/App.jsx
 import { useState, useEffect } from 'react';
-import { HashRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
-
-// Estilos globales (Bootstrap y personalizados)
+import { HashRouter as Router, Routes, Route, Navigate, Outlet, Link } from 'react-router-dom';
+// import { isTokenValid } from './utils/auth'; // Descomentar si se usa para la validación inicial
 import 'bootstrap/dist/css/bootstrap.min.css';
-import 'bootstrap/dist/js/bootstrap.bundle.min.js'; // Bootstrap JS para Dropdowns, Tooltips, etc.
+import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import 'bootstrap-icons/font/bootstrap-icons.css';
-import './App.css'; // Tus estilos personalizados, incluyendo .dark-mode y .light-mode si los usas a nivel de body
+import './App.css';
 
-// Componentes
 import SidebarMenu from './components/SidebarMenu';
 import Login from './Login';
 import Home from './Home';
@@ -17,140 +15,115 @@ import Profile from './Profile';
 import Settings from './Settings';
 import Admin from './Admin';
 import Reports from './Reports';
+import Costos from './Costos';
+import Personal from './Personal';
+import SupervisionIngreso from './SupervisionIngreso';
+import AdministrarPartesDiarios from './AdministrarPartesDiarios'; 
+import logoApp from './assets/logopedregal-rojo.png'; // Asume que este es tu logo principal para la navbar
 
-// Componente de Layout para Páginas Protegidas
-function ProtectedPageLayout({ isAuthenticatedProp, setIsAuthenticatedProp, darkModeProp, setDarkModeProp }) {
-  if (!isAuthenticatedProp) {
-    return <Navigate to="/" replace />; // Redirige a Login si no está autenticado
-  }
-
+// ProtectedPageLayout ahora solo define el área donde se renderiza el contenido de la ruta
+function ProtectedContentLayout({ darkModeProp }) {
   return (
-    // Aplica clases de dark/light mode aquí para que afecten a todo el layout protegido
-    <div className={`container-fluid vh-100 ${darkModeProp ? 'bg-dark text-light' : 'bg-light text-dark'}`}>
-      <div className="row h-100 flex-nowrap"> {/* flex-nowrap para mejor comportamiento en responsive */}
-        <div className="col-auto p-0"> {/* Columna para el SidebarMenu */}
-          <SidebarMenu
-            setIsAuthenticated={setIsAuthenticatedProp}
-            darkMode={darkModeProp}
-            setDarkMode={setDarkModeProp}
-          />
-        </div>
-        <main className="col p-3" style={{ overflowY: 'auto' }}> {/* Columna para el contenido principal */}
-          <Outlet /> {/* Aquí se renderizarán los componentes de las rutas anidadas */}
-        </main>
-      </div>
-    </div>
+    <main 
+        className={`flex-grow-1 p-3 main-content-area ${darkModeProp ? 'bg-dark-theme' : 'bg-light-theme'}`} // Clases de tema para el fondo del contenido
+        style={{ overflowY: 'auto' }}
+    >
+      <Outlet />
+    </main>
   );
 }
 
 function App() {
-  // Estado de autenticación, inicializado desde localStorage
   const [isAuthenticated, setIsAuthenticated] = useState(() => !!localStorage.getItem('token'));
-  // Estado de modo oscuro, inicializado desde localStorage
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true');
+  const sidebarOffcanvasId = "sidebarMenuOffcanvas";
 
-  // Efecto para guardar el estado de darkMode en localStorage cuando cambie
+  const handleLogout = () => {
+    localStorage.clear(); // Más simple si no necesitas retener nada específico post-logout excepto darkMode que se re-aplica
+    const dmPreference = darkMode; // Captura el estado actual antes de limpiar
+    setIsAuthenticated(false);
+    // Re-aplicar preferencia de darkMode si se borró
+    localStorage.setItem('darkMode', dmPreference.toString());
+    // El navigate a '/' es implícito por la lógica de rutas
+  };
+
   useEffect(() => {
     localStorage.setItem('darkMode', darkMode.toString());
-    // Opcional: aplicar clase al body para estilos globales de dark mode
-    if (darkMode) {
-      document.body.classList.add('dark-mode-body'); // Necesitarás definir esta clase en App.css
-      document.body.classList.remove('light-mode-body');
-    } else {
-      document.body.classList.add('light-mode-body');
-      document.body.classList.remove('dark-mode-body');
-    }
+    document.documentElement.setAttribute('data-bs-theme', darkMode ? 'dark' : 'light');
+    // Puedes mantener clases en body si tienes estilos muy específicos no cubiertos por data-bs-theme
+    document.body.classList.toggle('dark-mode-body', darkMode);
+    document.body.classList.toggle('light-mode-body', !darkMode);
   }, [darkMode]);
 
-  // Efecto para verificar el token al cargar (redundante si useState ya lo hace bien, pero es una doble verificación)
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) {
+    // Verificación de token al cargar la app
+    // const tokenValid = isTokenValid(); // Si usas una función de validación más robusta
+    const tokenExists = !!localStorage.getItem('token');
+    if (!tokenExists) { // O !tokenValid
       setIsAuthenticated(false);
     }
   }, []);
 
-  // Efecto para limpiar localStorage cuando el usuario cierra sesión (isAuthenticated cambia a false)
-  useEffect(() => {
-    if (!isAuthenticated) {
-      const dmPreference = localStorage.getItem('darkMode'); // Guarda la preferencia de darkMode
-      localStorage.clear(); // Limpia todo lo demás
-      if (dmPreference) {
-        localStorage.setItem('darkMode', dmPreference); // Restaura la preferencia de darkMode
-      }
-    }
-  }, [isAuthenticated]);
+  // No es necesario el useEffect que limpia localStorage al cambiar isAuthenticated,
+  // ya que handleLogout lo hace explícitamente.
 
   return (
-    // El div global aquí podría usarse para un wrapper general si es necesario,
-    // pero el ProtectedPageLayout ya maneja el fondo de las páginas autenticadas.
-    // Para la página de Login, podrías querer un estilo diferente que este div podría controlar.
-    <div className={darkMode ? 'app-dark' : 'app-light'}> {/* Clases opcionales para el wrapper de App */}
-      <Router>
-        <Routes>
-          {/* Ruta para Login (Pública) */}
-          <Route
-            path="/"
-            element={
-              isAuthenticated ? (
-                <Navigate to="/home" replace />
-              ) : (
-                <Login setIsAuthenticated={setIsAuthenticated} />
-              )
-            }
-          />
+    <Router>
+      <div className={`app-container ${darkMode ? 'app-dark' : 'app-light'}`}>
+        {!isAuthenticated ? (
+          <Routes>
+            <Route path="/*" element={<Login setIsAuthenticated={setIsAuthenticated} />} />
+          </Routes>
+        ) : (
+          <>
+            {/* Navbar superior solo para móviles */}
+            <nav className={`navbar ${darkMode ? 'navbar-dark bg-dark-custom-nav' : 'navbar-light bg-light-custom-nav'} d-md-none sticky-top shadow-sm py-1`}>
+              <div className="container-fluid">
+                <button 
+                  className="navbar-toggler border-0 px-2" 
+                  type="button" 
+                  data-bs-toggle="offcanvas" 
+                  data-bs-target={`#${sidebarOffcanvasId}`}
+                  aria-controls={sidebarOffcanvasId}
+                  aria-label="Toggle navigation"
+                >
+                  <i className={`bi bi-list ${darkMode ? 'text-light' : 'text-dark'}`} style={{fontSize: '1.8rem'}}></i>
+                </button>
+                <Link className="navbar-brand mx-auto" to="/home">
+                  <img src={logoApp} alt="Logo App" style={{ height: '30px', filter: darkMode ? 'brightness(0) invert(1)' : 'none' }} />
+                </Link>
+                <div style={{width: '40px'}}></div> {/* Placeholder para balancear */}
+              </div>
+            </nav>
 
-          {/* Rutas Protegidas anidadas dentro de ProtectedPageLayout */}
-          <Route
-            element={ // Elemento padre que define el layout para las rutas anidadas
-              <ProtectedPageLayout
-                isAuthenticatedProp={isAuthenticated}
-                setIsAuthenticatedProp={setIsAuthenticated}
-                darkModeProp={darkMode}
-                setDarkModeProp={setDarkMode}
+            <div className="d-flex main-layout-flex">
+              <SidebarMenu 
+                id={sidebarOffcanvasId}
+                setIsAuthenticated={handleLogout} 
+                darkMode={darkMode} 
+                setDarkMode={setDarkMode} 
               />
-            }
-          >
-            {/* Estas rutas hijas se renderizarán en el <Outlet /> de ProtectedPageLayout */}
-            {/* Es importante pasar setIsAuthenticated a los componentes que puedan necesitar desloguear al usuario
-                o verificar su estado de forma independiente, aunque SidebarMenu ya lo hace. */}
-            <Route path="/home" element={<Home setIsAuthenticated={setIsAuthenticated} />} />
-            <Route path="/dashboard" element={<Dashboard setIsAuthenticated={setIsAuthenticated} />} />
-            <Route path="/profile" element={<Profile />} /> {/* Asume que no necesita setIsAuthenticated directamente */}
-            <Route path="/settings" element={<Settings />} /> {/* Asume que no necesita setIsAuthenticated directamente */}
-            
-            <Route
-              path="/admin"
-              element={
-                localStorage.getItem('rol') === 'admin' ? (
-                  <Admin setIsAuthenticated={setIsAuthenticated} />
-                ) : (
-                  <Navigate to="/home" replace /> // O a una página de "Acceso Denegado"
-                )
-              }
-            />
-            <Route
-              path="/reports"
-              element={
-                localStorage.getItem('rol') === 'admin' ? (
-                  <Reports setIsAuthenticated={setIsAuthenticated} />
-                ) : (
-                  <Navigate to="/home" replace /> // O a una página de "Acceso Denegado"
-                )
-              }
-            />
-          </Route>
-          
-          {/* Ruta Catch-all para 404 o redirigir */}
-          <Route 
-            path="*" 
-            element={
-              isAuthenticated ? <Navigate to="/home" replace /> : <Navigate to="/" replace />
-            } 
-          />
-        </Routes>
-      </Router>
-    </div>
+              {/* ProtectedContentLayout envuelve el Outlet para las rutas autenticadas */}
+              <Routes>
+                <Route element={<ProtectedContentLayout darkModeProp={darkMode} />}>
+                  <Route path="/home" element={<Home darkMode={darkMode} setIsAuthenticated={handleLogout} />} />
+                  <Route path="/dashboard" element={<Dashboard darkMode={darkMode} setIsAuthenticated={handleLogout} />} />
+                  <Route path="/profile" element={<Profile darkMode={darkMode} />} />
+                  <Route path="/settings" element={<Settings darkMode={darkMode} />} />
+                  <Route path="/admin" element={localStorage.getItem('rol') === 'admin' ? <Admin darkMode={darkMode} setIsAuthenticated={handleLogout}/> : <Navigate to="/home" replace />} />
+                  <Route path="/reports" element={localStorage.getItem('rol') === 'admin' ? <Reports darkMode={darkMode} setIsAuthenticated={handleLogout}/> : <Navigate to="/home" replace />} />
+                  <Route path="/costos" element={localStorage.getItem('rol') === 'gerente' || localStorage.getItem('rol') === 'jefe_campo' || localStorage.getItem('rol') === 'admin' ?  <Costos setIsAuthenticated={handleLogout} darkMode={darkMode} />: <Navigate to="/home" replace />} />
+                  <Route path="/personal" element={localStorage.getItem('rol') === 'supervisor' || localStorage.getItem('rol') === 'jefe_campo' || localStorage.getItem('rol') === 'gerente' || localStorage.getItem('rol') === 'admin' ?<Personal setIsAuthenticated={handleLogout} darkMode={darkMode} />: <Navigate to="/home" replace />} />
+                  <Route path="/administrarpartesdiarios" element={localStorage.getItem('rol') === 'admin' || localStorage.getItem('rol') === 'apoyo' ? <AdministrarPartesDiarios setIsAuthenticated={handleLogout} darkMode={darkMode} /> : <Navigate to="/home" replace />} />
+                  <Route path="/supervisioningreso" element={localStorage.getItem('rol') === 'apoyo' || localStorage.getItem('rol') === 'admin' ? <SupervisionIngreso setIsAuthenticated={handleLogout} darkMode={darkMode} />: <Navigate to="/home" replace />} />
+                  <Route path="/*" element={<Navigate to="/home" replace />} /> {/* Catch-all para autenticados */}
+                </Route>
+              </Routes>
+            </div>
+          </>
+        )}
+      </div>
+    </Router>
   );
 }
 
