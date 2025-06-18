@@ -25,11 +25,23 @@ const getTodayDate = () => {
   return `${year}-${month}-${day}`;
 };
 
-const getStatusCellStyle = (statusValue, darkMode, textClassGlobal) => {
+const getStatusCellStyle = (statusValue, darkMode) => {
     const lowerStatus = statusValue?.toLowerCase();
-    if (lowerStatus === 'cumple') { return { color: darkMode ? '#A6FFB3' : '#0A4F15', backgroundColor: darkMode ? 'rgba(75, 231, 182, 0.1)' : 'rgba(200, 247, 217, 0.5)', fontWeight: 'bold' }; }
-    if (lowerStatus === 'no cumple') { return { color: darkMode ? '#FFB3B3' : '#7D1A1A', backgroundColor: darkMode ? 'rgba(255, 160, 160, 0.1)' : 'rgba(253, 206, 211, 0.5)', fontWeight: 'bold' }; }
-    return {color: textClassGlobal};
+    if (lowerStatus === 'cumple') { 
+        return { 
+            color: darkMode ? 'rgb(166, 255, 179)' : 'rgb(10, 79, 21)', 
+            backgroundColor: darkMode ? 'rgba(75, 231, 182, 0.1)' : 'rgba(200, 247, 217, 0.5)', 
+            fontWeight: 'bold' 
+        }; 
+    }
+    if (lowerStatus === 'no cumple') { 
+        return { 
+            color: darkMode ? 'rgb(255, 179, 179)' : 'rgb(125, 26, 26)', 
+            backgroundColor: darkMode ? 'rgba(255, 160, 160, 0.1)' : 'rgba(253, 206, 211, 0.5)', 
+            fontWeight: 'bold' 
+        }; 
+    }
+    return {}; // Default style, will inherit text color from parent
 };
 const normalizeDate = (dateString) => {
   if (!dateString) return null; const sDate = String(dateString).trim();
@@ -44,15 +56,29 @@ const formatDateForAxis = (dateString_YYYY_MM_DD) => {
     const options = { weekday: 'short', day: '2-digit', month: '2-digit', timeZone: 'America/Lima' }; let formatted = new Intl.DateTimeFormat('es-PE', options).format(date);
     formatted = formatted.charAt(0).toUpperCase() + formatted.slice(1).replace(/\./g, '').replace(',', ''); return formatted;
 };
-const metallicColors = {
-    green: 'rgba(25, 135, 84, 0.9)', red: 'rgba(220, 53, 69, 0.9)',
-    green_bg: 'rgba(25, 135, 84, 0.15)', red_bg: 'rgba(220, 53, 69, 0.15)',
-    green_text_dark: '#198754', red_text_dark: '#DC3545',
-    green_text_light: '#A3E9A4', red_text_light: '#FFB3B3',
-    blue: 'rgba(13, 110, 253, 0.8)', teal: 'rgba(32, 201, 151, 0.8)',
-    highlight_bg_dark: 'rgba(13, 110, 253, 0.2)', highlight_bg_light: 'rgba(13, 110, 253, 0.1)',
-    yellow: 'rgba(255, 193, 7, 0.8)', orange: 'rgba(253, 126, 20, 0.8)', purple: 'rgba(111, 66, 193, 0.8)'
+
+// Colors adapted for Apple-style minimalism
+const minimalistColors = {
+    green: 'rgba(52, 199, 89, 0.9)', // A softer green
+    red: 'rgba(255, 59, 48, 0.9)',   // A softer red
+    blue: 'rgba(0, 122, 255, 0.9)',  // Apple blue
+    gray: 'rgba(142, 142, 147, 0.9)', // Medium gray for borders/text
+    lightGray: 'rgba(229, 229, 234, 0.9)', // Very light gray
+    darkGray: 'rgba(28, 28, 30, 0.9)',  // Dark gray for dark mode backgrounds
+    white: '#ffffff',
+    black: '#000000',
+    // Backgrounds for compliance status
+    green_bg_light: 'rgba(52, 199, 89, 0.1)',
+    red_bg_light: 'rgba(255, 59, 48, 0.1)',
+    green_bg_dark: 'rgba(52, 199, 89, 0.2)',
+    red_bg_dark: 'rgba(255, 59, 48, 0.2)',
+    // Text colors for compliance status
+    green_text_light: 'rgb(34, 139, 34)', // Darker green for contrast on light bg
+    red_text_light: 'rgb(178, 34, 34)',   // Darker red for contrast on light bg
+    green_text_dark: 'rgb(166, 255, 179)', // Lighter green for contrast on dark bg
+    red_text_dark: 'rgb(255, 179, 179)',   // Lighter red for contrast on dark bg
 };
+
 
 function Personal({ setIsAuthenticated, darkMode }) {
   const [rawData, setRawData] = useState([]);
@@ -64,7 +90,7 @@ function Personal({ setIsAuthenticated, darkMode }) {
     fecha: getTodayDate(), 
     jefe_campo: '',
     lote: '',
-    labor: '', // CAMBIO: Usaremos 'labor' como clave de filtro para el código de labor
+    labor: '', 
     encargado: '',
     estadoCalculado: '',
   });
@@ -74,13 +100,38 @@ function Personal({ setIsAuthenticated, darkMode }) {
   const [showDataLabels, setShowDataLabels] = useState(false);
 
   const apiBaseUrl = import.meta.env.VITE_API_URL;
-  const textClassGlobal = darkMode ? 'rgb(230, 230, 230)' : 'rgb(40, 40, 40)';
-  const gridColorGlobal = darkMode ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.1)';
-  const cardBgGlobal = darkMode ? '#212529' : '#f8f9fa';
-  const cardClass = `card shadow-sm mb-4 ${darkMode ? 'bg-dark border-secondary text-light' : 'bg-light'}`;
-  const inputBgClass = darkMode ? 'form-control form-control-sm bg-dark text-white border-secondary' : 'form-control form-control-sm bg-light text-dark';
-  const tableClass = `table table-sm table-striped table-hover ${darkMode ? 'table-dark' : ''}`;
-  const buttonSecondaryClass = `btn btn-sm ${darkMode ? 'btn-outline-light' : 'btn-secondary'}`;
+  
+  // Dynamic styles based on darkMode
+  const primaryTextColor = darkMode ? 'rgb(240, 240, 240)' : 'rgb(50, 50, 50)';
+  const secondaryTextColor = darkMode ? 'rgb(180, 180, 180)' : 'rgb(100, 100, 100)';
+  const backgroundColor = darkMode ? 'rgb(29, 29, 31)' : 'rgb(242, 242, 247)';
+  const cardBackgroundColor = darkMode ? 'rgb(44, 44, 46)' : 'rgb(255, 255, 255)';
+  const borderColor = darkMode ? 'rgba(80, 80, 80, 0.6)' : 'rgba(200, 200, 200, 0.8)';
+  const subtleShadow = darkMode ? '0 1px 3px rgba(0, 0, 0, 0.4)' : '0 1px 3px rgba(0, 0, 0, 0.1)';
+  const buttonBorderRadius = '8px';
+  const inputBorderRadius = '6px';
+
+  const getStatusBgColor = (statusValue, darkMode) => {
+    const lowerStatus = statusValue?.toLowerCase();
+    if (lowerStatus === 'cumple') {
+        return darkMode ? minimalistColors.green_bg_dark : minimalistColors.green_bg_light;
+    }
+    if (lowerStatus === 'no cumple') {
+        return darkMode ? minimalistColors.red_bg_dark : minimalistColors.red_bg_light;
+    }
+    return 'transparent';
+  };
+  const getStatusTextColor = (statusValue, darkMode) => {
+    const lowerStatus = statusValue?.toLowerCase();
+    if (lowerStatus === 'cumple') {
+        return darkMode ? minimalistColors.green_text_dark : minimalistColors.green_text_light;
+    }
+    if (lowerStatus === 'no cumple') {
+        return darkMode ? minimalistColors.red_text_dark : minimalistColors.red_text_light;
+    }
+    return primaryTextColor;
+  };
+
 
   useEffect(() => {
     const fetchData = async () => {
@@ -123,50 +174,72 @@ function Personal({ setIsAuthenticated, darkMode }) {
   }, [apiBaseUrl, filters.fecha, setIsAuthenticated]);
 
   useEffect(() => {
-    const dataWithCalculations = rawData.map(item => {
-      const horasAvance1 = parseFloat(item.horas_avance1) || 0; const avance1 = parseFloat(item.avance1) || 0;
+  const dataWithCalculations = rawData
+    .filter(item => item.rol === 'Obrero') // Filter by role "Obrero"
+    .map(item => {
+      const horasAvance1 = parseFloat(item.horas_avance1) || 0;
+      const avance1 = parseFloat(item.avance1) || 0;
       const prodHoraEjec = horasAvance1 > 0 ? avance1 / horasAvance1 : 0;
       const prodHoraProy = parseFloat(item.proyeccion_x_hora_prom) || 0;
       const estadoCalculado = prodHoraEjec >= prodHoraProy ? "CUMPLE" : "NO CUMPLE";
       return { ...item, prodHoraEjec, estadoCalculado };
     });
-    setProcessedData(dataWithCalculations);
-  }, [rawData]);
+  setProcessedData(dataWithCalculations);
+}, [rawData]);
 
   useEffect(() => {
-    let dataToFilterAndSort = [...processedData];
-    // El filtro de fecha ya se aplica en la llamada a la API, pero lo mantenemos por si rawData cambia.
-    if (filters.fecha) { dataToFilterAndSort = dataToFilterAndSort.filter(item => item.fecha_norm === filters.fecha); }
-    if (filters.jefe_campo) { dataToFilterAndSort = dataToFilterAndSort.filter(item => item.jefe_campo === filters.jefe_campo); }
-    if (filters.lote) { dataToFilterAndSort = dataToFilterAndSort.filter(item => item.lote === filters.lote); }
-    // CAMBIO: Ahora filtra por `item.labor` (el código numérico de la labor)
-    if (filters.labor) { dataToFilterAndSort = dataToFilterAndSort.filter(item => item.labor?.toString() === filters.labor); }
-    if (filters.encargado) { dataToFilterAndSort = dataToFilterAndSort.filter(item => item.encargado === filters.encargado); }
-    if (filters.estadoCalculado) { dataToFilterAndSort = dataToFilterAndSort.filter(item => item.estadoCalculado === filters.estadoCalculado); }
-    
+    let dataToFilterAndSort = processedData.filter(item => item.rol === 'Obrero'); 
+    if (filters.fecha) {
+      dataToFilterAndSort = dataToFilterAndSort.filter(item => item.fecha_norm === filters.fecha);
+    }
+    if (filters.jefe_campo) {
+      dataToFilterAndSort = dataToFilterAndSort.filter(item => item.jefe_campo === filters.jefe_campo);
+    }
+    if (filters.lote) {
+      dataToFilterAndSort = dataToFilterAndSort.filter(item => item.lote === filters.lote);
+    }
+    if (filters.labor) {
+      dataToFilterAndSort = dataToFilterAndSort.filter(item => item.labor?.toString() === filters.labor);
+    }
+    if (filters.encargado) {
+      dataToFilterAndSort = dataToFilterAndSort.filter(item => item.encargado === filters.encargado);
+    }
+    if (filters.estadoCalculado) {
+      dataToFilterAndSort = dataToFilterAndSort.filter(item => item.estadoCalculado === filters.estadoCalculado);
+    }
+
     if (sortConfig.key) {
       dataToFilterAndSort.sort((a, b) => {
-        let valA = a[sortConfig.key]; let valB = b[sortConfig.key]; const numA = parseFloat(valA); const numB = parseFloat(valB);
-        if (!isNaN(numA) && !isNaN(numB)) { valA = numA; valB = numB; } else { valA = String(valA || '').toLowerCase(); valB = String(valB || '').toLowerCase(); }
-        if (valA < valB) return sortConfig.direction === 'ascending' ? -1 : 1; if (valA > valB) return sortConfig.direction === 'ascending' ? 1 : -1; return 0;
+        let valA = a[sortConfig.key];
+        let valB = b[sortConfig.key];
+        const numA = parseFloat(valA);
+        const numB = parseFloat(valB);
+        if (!isNaN(numA) && !isNaN(numB)) {
+          valA = numA;
+          valB = numB;
+        } else {
+          valA = String(valA || '').toLowerCase();
+          valB = String(valB || '').toLowerCase();
+        }
+        if (valA < valB) return sortConfig.direction === 'ascending' ? -1 : 1;
+        if (valA > valB) return sortConfig.direction === 'ascending' ? 1 : -1;
+        return 0;
       });
     }
     setFilteredAndSortedData(dataToFilterAndSort);
   }, [processedData, filters, sortConfig]);
 
   const handleSort = (key) => { let direction = 'ascending'; if (sortConfig.key === key && sortConfig.direction === 'ascending') { direction = 'descending'; } setSortConfig({ key, direction }); };
-  const getSortIndicator = (key) => { if (sortConfig.key === key) { return sortConfig.direction === 'ascending' ? <i className="bi bi-sort-up ms-1"></i> : <i className="bi bi-sort-down ms-1"></i>; } return <i className="bi bi-arrow-down-up ms-1 opacity-25"></i>; };
+  const getSortIndicator = (key) => { if (sortConfig.key === key) { return sortConfig.direction === 'ascending' ? <i className="bi bi-sort-up" style={{fontSize: '0.7em', verticalAlign: 'middle', marginLeft: '4px'}}></i> : <i className="bi bi-sort-down" style={{fontSize: '0.7em', verticalAlign: 'middle', marginLeft: '4px'}}></i>; } return <i className="bi bi-arrow-down-up" style={{fontSize: '0.7em', verticalAlign: 'middle', marginLeft: '4px', opacity: '0.25'}}></i>; };
   const handleSortAsistente = (key) => { let direction = 'ascending'; if (sortConfigAsistente.key === key && sortConfigAsistente.direction === 'ascending') { direction = 'descending'; } setSortConfigAsistente({ key, direction }); };
-  const getSortIndicatorAsistente = (key) => { if (sortConfigAsistente.key === key) { return sortConfigAsistente.direction === 'ascending' ? <i className="bi bi-sort-up ms-1"></i> : <i className="bi bi-sort-down ms-1"></i>; } return <i className="bi bi-arrow-down-up ms-1 opacity-25"></i>; };
+  const getSortIndicatorAsistente = (key) => { if (sortConfigAsistente.key === key) { return sortConfigAsistente.direction === 'ascending' ? <i className="bi bi-sort-up" style={{fontSize: '0.7em', verticalAlign: 'middle', marginLeft: '4px'}}></i> : <i className="bi bi-sort-down" style={{fontSize: '0.7em', verticalAlign: 'middle', marginLeft: '4px'}}></i>; } return <i className="bi bi-arrow-down-up" style={{fontSize: '0.7em', verticalAlign: 'middle', marginLeft: '4px', opacity: '0.25'}}></i>; };
   
-  // CAMBIO: handleFilterChange ahora maneja el reseteo de filtros descendentes
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
     setFilters(prevFilters => {
       const newFilters = { ...prevFilters, [name]: value };
 
-      // Reseteo de filtros descendentes
-      if (name === 'fecha') { // Si cambia la fecha, se resetean todos los filtros subsiguientes
+      if (name === 'fecha') {
         newFilters.jefe_campo = '';
         newFilters.lote = '';
         newFilters.labor = '';
@@ -179,17 +252,16 @@ function Personal({ setIsAuthenticated, darkMode }) {
       } else if (name === 'lote') {
         newFilters.labor = '';
         newFilters.encargado = '';
-      } else if (name === 'labor') { // Si cambia la labor, se resetea el encargado
+      } else if (name === 'labor') { 
         newFilters.encargado = '';
       }
       return newFilters;
     });
   };
 
-  // --- Generación de opciones para filtros en cascada ---
   const getFilteredDataForNextLevel = (currentData, currentFilters) => {
     let data = [...currentData];
-    if (currentFilters.fecha) { // El filtro de fecha ya se aplica en la API, pero lo incluimos para consistencia.
+    if (currentFilters.fecha) { 
         data = data.filter(item => item.fecha_norm === currentFilters.fecha);
     }
     if (currentFilters.jefe_campo) {
@@ -198,43 +270,37 @@ function Personal({ setIsAuthenticated, darkMode }) {
     if (currentFilters.lote) {
         data = data.filter(item => item.lote === currentFilters.lote);
     }
-    if (currentFilters.labor) { // CAMBIO: Usa item.labor para filtrar
+    if (currentFilters.labor) { 
         data = data.filter(item => item.labor?.toString() === currentFilters.labor);
     }
     return data;
   };
 
-  // Opciones para Jefe de Campo (depende de rawData y filters.fecha)
   const uniqueJefesCampo = useMemo(() => {
     const data = getFilteredDataForNextLevel(rawData, { fecha: filters.fecha });
     return [...new Set(data.map(item => item.jefe_campo).filter(Boolean))].sort();
   }, [rawData, filters.fecha]);
 
-  // Opciones para Lote (depende de rawData, filters.fecha, filters.jefe_campo)
   const uniqueLotes = useMemo(() => {
     const data = getFilteredDataForNextLevel(rawData, { fecha: filters.fecha, jefe_campo: filters.jefe_campo });
     return [...new Set(data.map(item => item.lote).filter(Boolean))].sort();
   }, [rawData, filters.fecha, filters.jefe_campo]);
   
-  // Opciones para Labor (depende de rawData, filters.fecha, filters.jefe_campo, filters.lote)
   const uniqueLabores = useMemo(() => {
     const data = getFilteredDataForNextLevel(rawData, { fecha: filters.fecha, jefe_campo: filters.jefe_campo, lote: filters.lote });
     const laboresMap = new Map();
     data.forEach(item => {
-        // Usa item.labor para la clave y item.descripcion_labor para la descripción
         if (item.labor !== null && typeof item.labor !== 'undefined' && item.descripcion_labor) {
             laboresMap.set(item.labor.toString(), item.descripcion_labor);
         }
     });
-    // El objeto devuelto tendrá { cod: (string de item.labor), descripcion_labor: item.descripcion_labor }
     return Array.from(laboresMap.entries())
                  .map(([codigoLabor, descLabor]) => ({ cod: codigoLabor, descripcion_labor: descLabor }))
                  .sort((a, b) => a.descripcion_labor.localeCompare(b.descripcion_labor));
   }, [rawData, filters.fecha, filters.jefe_campo, filters.lote]);
 
-  // Opciones para Encargado (depende de rawData, filters.fecha, filters.jefe_campo, filters.lote, filters.labor)
   const uniqueEncargados = useMemo(() => {
-    const data = getFilteredDataForNextLevel(rawData, { fecha: filters.fecha, jefe_campo: filters.jefe_campo, lote: filters.lote, labor: filters.labor }); // CAMBIO: Usa filters.labor
+    const data = getFilteredDataForNextLevel(rawData, { fecha: filters.fecha, jefe_campo: filters.jefe_campo, lote: filters.lote, labor: filters.labor }); 
     return [...new Set(data.map(item => item.encargado).filter(Boolean))].sort();
   }, [rawData, filters.fecha, filters.jefe_campo, filters.lote, filters.labor]);
 
@@ -245,11 +311,11 @@ function Personal({ setIsAuthenticated, darkMode }) {
     labels: ['Cumple', 'No Cumple'], 
     datasets: [{ 
       data: [estadoSummary['CUMPLE'], estadoSummary['NO CUMPLE']], 
-      backgroundColor: [metallicColors.green, metallicColors.red], 
-      borderColor: darkMode ? '#212529' : '#fff', 
+      backgroundColor: [minimalistColors.green, minimalistColors.red], 
+      borderColor: cardBackgroundColor, 
       borderWidth: 2, 
     }] 
-  }), [estadoSummary, darkMode]);
+  }), [estadoSummary, cardBackgroundColor]);
 
   const stackedBarEstadoPorAsistenteData = useMemo(() => {
     const porAsistente = {};
@@ -270,8 +336,8 @@ function Personal({ setIsAuthenticated, darkMode }) {
     return {
         labels,
         datasets: [
-            { label: 'Cumple', data: cumpleData, backgroundColor: metallicColors.green },
-            { label: 'No Cumple', data: noCumpleData, backgroundColor: metallicColors.red },
+            { label: 'Cumple', data: cumpleData, backgroundColor: minimalistColors.green },
+            { label: 'No Cumple', data: noCumpleData, backgroundColor: minimalistColors.red },
         ]
     };
   }, [filteredAndSortedData]);
@@ -279,37 +345,50 @@ function Personal({ setIsAuthenticated, darkMode }) {
   const commonChartOptions = (title, yAxisLabel = '', customOptions = {}) => ({
     responsive: true, maintainAspectRatio:false, indexAxis: 'x',
     plugins: {
-        legend: { display: customOptions.showLegend !== undefined ? customOptions.showLegend : true, position: customOptions.legendPosition || 'top', labels:{color:textClassGlobal, boxWidth:10, padding:8, font:{size:9} } },
-        title: { display: !!title, text: title, color:textClassGlobal, font:{size:11, weight:'bold'} },
-        datalabels: { display: showDataLabels, anchor:'end', align:'top', color:textClassGlobal, font:{weight:'bold', size:9}, formatter:(value)=>value }
+        legend: { display: customOptions.showLegend !== undefined ? customOptions.showLegend : true, position: customOptions.legendPosition || 'top', labels:{color:secondaryTextColor, boxWidth:8, padding:6, font:{size:9} } },
+        title: { display: !!title, text: title, color:primaryTextColor, font:{size:11, weight:'bold'} },
+        datalabels: { display: showDataLabels, anchor:'end', align:'top', color:primaryTextColor, font:{weight:'bold', size:9}, formatter:(value)=>value }
     },
-    scales: { x:{ ticks:{color:textClassGlobal, font:{size:9}}, grid:{color:gridColorGlobal, borderColor:gridColorGlobal} }, y:{ ticks:{color:textClassGlobal, font:{size:9}}, grid:{color:gridColorGlobal, borderColor:gridColorGlobal}, title: {display: !!yAxisLabel, text:yAxisLabel, color:textClassGlobal, font:{size:9}} } },
+    scales: { 
+        x:{ 
+            ticks:{color:secondaryTextColor, font:{size:9}}, 
+            grid:{color:darkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)', drawOnChartArea: false, drawTicks: false}, 
+            borderColor: borderColor
+        }, 
+        y:{ 
+            ticks:{color:secondaryTextColor, font:{size:9}}, 
+            grid:{color:darkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}, 
+            borderColor: borderColor,
+            title: {display: !!yAxisLabel, text:yAxisLabel, color:secondaryTextColor, font:{size:9}} 
+        } 
+    },
     ...customOptions?.nativeOptions
   });
+
   const pieChartOptions = (titleText) => ({
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
       legend: {
-        position: 'right', // Move legend to the right
+        position: 'right', 
         labels: {
-          color: textClassGlobal,
-          boxWidth: 10,
-          padding: 8,
+          color: secondaryTextColor,
+          boxWidth: 8,
+          padding: 6,
           font: { size: 9 },
         },
       },
       title: {
         display: !!titleText,
         text: titleText,
-        color: textClassGlobal,
+        color: primaryTextColor,
         font: { size: 11, weight: 'bold' },
       },
       tooltip: {
-        backgroundColor: darkMode ? 'rgba(30,30,30,0.95)' : 'rgba(255,255,255,0.95)',
-        titleColor: textClassGlobal,
-        bodyColor: textClassGlobal,
-        borderColor: gridColorGlobal,
+        backgroundColor: darkMode ? 'rgba(60,60,60,0.9)' : 'rgba(250,250,250,0.9)',
+        titleColor: primaryTextColor,
+        bodyColor: primaryTextColor,
+        borderColor: borderColor,
         borderWidth: 1,
         padding: 10,
         boxPadding: 4,
@@ -317,10 +396,8 @@ function Personal({ setIsAuthenticated, darkMode }) {
       datalabels: {
         display: true,
         color: (context) => {
-          const bgColor = context.dataset.backgroundColor[context.dataIndex];
-          if (!bgColor) return 'rgb(240,240,240)';
-          const brightness = (bgColor.r * 299 + bgColor.g * 587 + bgColor.b * 114) / 1000;
-          return brightness > 125 ? 'rgb(20,20,20)' : 'rgb(240,240,240)';
+            const value = context.dataset.backgroundColor[context.dataIndex];
+            return 'white'; 
         },
         font: { weight: 'bold', size: 10 },
         formatter: (value, ctx) => {
@@ -335,224 +412,526 @@ function Personal({ setIsAuthenticated, darkMode }) {
       },
     },
   });
-  const stackedBarOptions = (title, yAxisLabel) => ({ ...commonChartOptions(title, yAxisLabel, {legendPosition:'bottom', showLegend:true}), scales: { ...commonChartOptions(title, yAxisLabel).scales, x: {...commonChartOptions(title, yAxisLabel).scales.x, stacked:true, ticks:{...commonChartOptions(title,yAxisLabel).scales.x.ticks, font:{size:8}}}, y: {...commonChartOptions(title, yAxisLabel).scales.y, stacked:true} } });
+
+  const stackedBarOptions = (title, yAxisLabel) => ({ 
+    ...commonChartOptions(title, yAxisLabel, {legendPosition:'bottom', showLegend:true}), 
+    scales: { 
+      ...commonChartOptions(title, yAxisLabel).scales, 
+      x: {
+        ...commonChartOptions(title,yAxisLabel).scales.x, 
+        stacked:true, 
+        ticks:{...commonChartOptions(title,yAxisLabel).scales.x.ticks, font:{size:8}},
+        grid:{color:darkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'} 
+      }, 
+      y: {
+        ...commonChartOptions(title, yAxisLabel).scales.y, 
+        stacked:true
+      } 
+    } 
+  });
   
   const resumenPorAsistente = useMemo(() => {
-    const porAsistente = {}; filteredAndSortedData.forEach(item => { if (!item.encargado) return; if (!porAsistente[item.encargado]) porAsistente[item.encargado] = { 'CUMPLE': 0, 'NO CUMPLE': 0, total: 0, prodHoraEjecValues: [] }; porAsistente[item.encargado][item.estadoCalculado]++; porAsistente[item.encargado].total++; if(typeof item.prodHoraEjec === 'number' && !isNaN(item.prodHoraEjec)) { porAsistente[item.encargado].prodHoraEjecValues.push(item.prodHoraEjec); } });
-    let result = Object.entries(porAsistente).map(([encargado, data]) => ({ encargado, cumple: data['CUMPLE'], noCumple: data['NO CUMPLE'], total: data.total, minProdHora: data.prodHoraEjecValues.length > 0 ? Math.min(...data.prodHoraEjecValues) : 0, maxProdHora: data.prodHoraEjecValues.length > 0 ? Math.max(...data.prodHoraEjecValues) : 0, }));
-    if (sortConfigAsistente.key) { result.sort((a,b) => { let valA = a[sortConfigAsistente.key]; let valB = b[sortConfigAsistente.key]; if(typeof valA === 'string') valA = valA.toLowerCase(); if(typeof valB === 'string') valB = valB.toLowerCase(); if (valA < valB) return sortConfigAsistente.direction === 'ascending' ? -1 : 1; if (valA > valB) return sortConfigAsistente.direction === 'ascending' ? 1 : -1; return 0; }); }
+    const porAsistente = {};
+    filteredAndSortedData.forEach(item => {
+      if (!item.encargado) return;
+      if (!porAsistente[item.encargado]) {
+        porAsistente[item.encargado] = {
+          'CUMPLE': 0,
+          'NO CUMPLE': 0,
+          total: 0,
+          prodHoraEjecValues: []
+        };
+      }
+      porAsistente[item.encargado][item.estadoCalculado]++;
+      porAsistente[item.encargado].total++;
+      if (typeof item.prodHoraEjec === 'number' && !isNaN(item.prodHoraEjec)) {
+        porAsistente[item.encargado].prodHoraEjecValues.push(item.prodHoraEjec);
+      }
+    });
+    let result = Object.entries(porAsistente).map(([encargado, data]) => ({
+      encargado,
+      cumple: data['CUMPLE'],
+      noCumple: data['NO CUMPLE'],
+      total: data.total,
+      minProdHora: data.prodHoraEjecValues.length > 0 ? Math.min(...data.prodHoraEjecValues) : 0,
+      maxProdHora: data.prodHoraEjecValues.length > 0 ? Math.max(...data.prodHoraEjecValues) : 0,
+    }));
+    if (sortConfigAsistente.key) {
+      result.sort((a, b) => {
+        let valA = a[sortConfigAsistente.key];
+        let valB = b[sortConfigAsistente.key];
+        if (typeof valA === 'string') valA = valA.toLowerCase();
+        if (typeof valB === 'string') valB = valB.toLowerCase();
+        if (valA < valB) return sortConfigAsistente.direction === 'ascending' ? -1 : 1;
+        if (valA > valB) return sortConfigAsistente.direction === 'ascending' ? 1 : -1;
+        return 0;
+      });
+    }
     return result;
   }, [filteredAndSortedData, sortConfigAsistente]);
 
-  const rankingProdHoraEjec = useMemo(() => { const dataConProd = filteredAndSortedData.filter(item => typeof item.prodHoraEjec === 'number' && !isNaN(item.prodHoraEjec) && item.prodHoraEjec > 0); const sortedByProd = [...dataConProd].sort((a, b) => b.prodHoraEjec - a.prodHoraEjec); return { mejores: sortedByProd.slice(0, 5), peores: [...dataConProd].sort((a,b) => a.prodHoraEjec - b.prodHoraEjec).slice(0,5) }; }, [filteredAndSortedData]);
-  const exportToExcel = () => { const dataToExport = filteredAndSortedData.map(item => ({ 'FECHA': item.fecha_norm, 'ASISTENTE (Encargado)': item.encargado, 'JEFE DE CAMPO': item.jefe_campo, 'TRABAJADOR': item.trabajador, 'DNI': item.dni, 'MIN': item.min, 'MAX': item.max, 'HRS. TRAB.': (parseFloat(item.horas_avance1) || 0).toFixed(2), 'PLANTAS TRAB.': item.avance1, 'PROD/HR PROY': (parseFloat(item.proyeccion_x_hora_prom) || 0).toFixed(2), 'PROD/HR EJEC': item.prodHoraEjec.toFixed(2), 'ESTADO': item.estadoCalculado, 'COMENTARIO': item.comentario || '', 'LABOR': item.descripcion_labor, 'LOTE': item.lote, })); const worksheet = XLSX.utils.json_to_sheet(dataToExport); const workbook = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(workbook, worksheet, "ProductividadPersonal"); XLSX.writeFile(workbook, "ProductividadPersonal.xlsx"); };
-  const displayedData = useMemo(() => { if (rowsPerPage === 'Todas') return filteredAndSortedData; return filteredAndSortedData.slice(0, parseInt(rowsPerPage, 10)); }, [filteredAndSortedData, rowsPerPage]);
+  const rankingProdHoraEjec = useMemo(() => {
+    const dataConProd = filteredAndSortedData.filter(
+      item => typeof item.prodHoraEjec === 'number' && !isNaN(item.prodHoraEjec) && item.prodHoraEjec > 0
+    );
+    const sortedByProd = [...dataConProd].sort((a, b) => b.prodHoraEjec - a.prodHoraEjec);
+    return {
+      mejores: sortedByProd.slice(0, 5),
+      peores: [...dataConProd].sort((a, b) => a.prodHoraEjec - b.prodHoraEjec).slice(0, 5)
+    };
+  }, [filteredAndSortedData]);
 
-  if (loading) return <div className="container-fluid text-center py-5"><div className={`spinner-border ${textClassGlobal}`} style={{ width: '3rem', height: '3rem' }} role="status"><span className="visually-hidden">Cargando...</span></div></div>;
-  if (error) return <div className={`container-fluid alert alert-danger mt-4 ${darkMode ? 'text-white bg-danger border-danger' : ''}`} role="alert"><i className="bi bi-exclamation-triangle-fill me-2"></i>Error: {error}</div>;
+  const exportToExcel = () => { 
+    const dataToExport = filteredAndSortedData.map(item => ({ 
+      'FECHA': item.fecha_norm, 
+      'ASISTENTE (Encargado)': item.encargado, 
+      'JEFE DE CAMPO': item.jefe_campo, 
+      'TRABAJADOR': item.trabajador, 
+      'DNI': item.dni, 
+      'MIN': item.min, 
+      'MAX': item.max, 
+      'HRS. TRAB.': (parseFloat(item.horas_avance1) || 0).toFixed(2), 
+      'PLANTAS TRAB.': item.avance1, 
+      'PROD/HR PROY': (parseFloat(item.proyeccion_x_hora_prom) || 0).toFixed(2), 
+      'PROD/HR EJEC': item.prodHoraEjec.toFixed(2), 
+      'ESTADO': item.estadoCalculado, 
+      'COMENTARIO': item.comentario || '', 
+      'LABOR': item.descripcion_labor, 
+      'LOTE': item.lote, 
+    })); 
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport); 
+    const workbook = XLSX.utils.book_new(); 
+    XLSX.utils.book_append_sheet(workbook, worksheet, "ProductividadPersonal"); 
+    XLSX.writeFile(workbook, "ProductividadPersonal.xlsx"); 
+  };
+
+  const displayedData = useMemo(() => {
+  const filteredByRole = filteredAndSortedData.filter(item => item.rol === 'Obrero'); 
+  if (rowsPerPage === 'Todas') return filteredByRole;
+  return filteredByRole.slice(0, parseInt(rowsPerPage, 10));
+}, [filteredAndSortedData, rowsPerPage]);
+
+  const appContainerStyle = {
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"',
+    backgroundColor: backgroundColor,
+    color: primaryTextColor,
+    minHeight: '100vh',
+    padding: '20px',
+  };
+
+  const cardStyle = {
+    backgroundColor: cardBackgroundColor,
+    borderRadius: '12px',
+    boxShadow: subtleShadow,
+    border: `1px solid ${borderColor}`,
+    marginBottom: '20px',
+    padding: '20px',
+  };
+
+  const buttonStyle = {
+    padding: '8px 16px',
+    borderRadius: buttonBorderRadius,
+    border: `1px solid ${borderColor}`,
+    backgroundColor: 'transparent',
+    color: primaryTextColor,
+    cursor: 'pointer',
+    fontSize: '0.9rem',
+    transition: 'all 0.2s ease-in-out',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    justifyContent: 'center',
+  };
+
+  const primaryButtonStyle = {
+    ...buttonStyle,
+    backgroundColor: darkMode ? minimalistColors.blue : 'rgb(0, 122, 255)',
+    color: 'white',
+    border: 'none',
+  };
+
+  const inputStyle = {
+    padding: '8px 12px',
+    borderRadius: inputBorderRadius,
+    border: `1px solid ${borderColor}`,
+    backgroundColor: darkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+    color: primaryTextColor,
+    fontSize: '0.9rem',
+    width: '100%',
+    boxSizing: 'border-box',
+    WebkitAppearance: 'none', 
+    MozAppearance: 'none',
+    appearance: 'none',
+  };
+
+  const selectStyle = {
+    ...inputStyle,
+    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%23${darkMode ? 'CCC' : '666'}' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3E%3C/svg%3E")`,
+    backgroundRepeat: 'no-repeat',
+    backgroundPosition: 'right 10px center',
+    backgroundSize: '10px',
+    paddingRight: '30px',
+  };
+
+  const tableHeaderStyle = {
+    cursor: 'pointer',
+    whiteSpace: 'nowrap',
+    padding: '10px 8px',
+    textAlign: 'center',
+    borderBottom: `1px solid ${borderColor}`,
+    borderRight: `1px solid ${darkMode ? 'rgba(80,80,80,0.4)' : 'rgba(200,200,200,0.6)'}`,
+    position: 'sticky',
+    top: 0,
+    backgroundColor: cardBackgroundColor,
+    fontWeight: '600',
+    fontSize: '0.8rem',
+    color: secondaryTextColor,
+  };
+
+  const tableRowStyle = {
+    fontSize: '0.75rem',
+    padding: '8px 8px',
+    whiteSpace: 'nowrap',
+    borderRight: `1px solid ${darkMode ? 'rgba(80,80,80,0.2)' : 'rgba(200,200,200,0.4)'}`,
+    borderBottom: `1px solid ${darkMode ? 'rgba(80,80,80,0.1)' : 'rgba(200,200,200,0.2)'}`,
+    color: primaryTextColor,
+  };
+
+  const numericCellStyle = {
+    textAlign: 'center',
+  };
+
+  const highlightCellStyle = {
+    backgroundColor: darkMode ? 'rgba(0, 122, 255, 0.15)' : 'rgba(0, 122, 255, 0.08)',
+    fontWeight: 'bold',
+  };
+
+  const mobileCardStyle = {
+    backgroundColor: cardBackgroundColor,
+    borderRadius: '10px',
+    boxShadow: subtleShadow,
+    border: `1px solid ${borderColor}`,
+    marginBottom: '10px',
+    padding: '15px',
+    fontSize: '0.8rem',
+  };
+
+  const mobileCardTitleStyle = {
+    fontSize: '1rem',
+    marginBottom: '8px',
+    fontWeight: '600',
+    color: primaryTextColor,
+  };
+
+  const mobileCardTextStyle = {
+    marginBottom: '4px',
+    fontSize: '0.85rem',
+    color: secondaryTextColor,
+  };
+
+  const mobileCardStrongStyle = {
+    minWidth: '90px',
+    display: 'inline-block',
+    fontWeight: '500',
+    color: primaryTextColor,
+  };
+
+  if (loading) return (
+    <div style={{ ...appContainerStyle, display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+      <div style={{ border: `4px solid ${primaryTextColor}`, borderTop: `4px solid transparent`, borderRadius: '50%', width: '40px', height: '40px', animation: 'spin 1s linear infinite' }}></div>
+      <style jsx global>{` /* MODIFICADO: sin {true} */
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
+    </div>
+  );
+
+  if (error) return (
+    <div style={{ ...appContainerStyle, paddingTop: '20px' }}>
+      <div style={{ backgroundColor: darkMode ? 'rgba(255, 59, 48, 0.15)' : 'rgba(255, 59, 48, 0.08)', color: darkMode ? minimalistColors.red_text_dark : minimalistColors.red_text_light, border: `1px solid ${minimalistColors.red}`, borderRadius: '8px', padding: '15px', display: 'flex', alignItems: 'center' }}>
+        <i className="bi bi-exclamation-triangle-fill" style={{ marginRight: '10px', fontSize: '1.2rem' }}></i>
+        <span>Error: {error}</span>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="container-fluid py-3">
-      <style jsx global>{`
-        .tabla-personal th { 
-          cursor: pointer; white-space: normal !important; word-break: break-word !important; 
-          vertical-align: middle; text-align: center; 
-          position: sticky; top: 0; z-index: 1; 
-          background-color: ${cardBgGlobal}; 
-          border-right: 1px solid ${gridColorGlobal}; 
-          border-bottom: 2px solid ${gridColorGlobal};
-        }
-        .tabla-personal td { 
-          font-size: 0.70rem !important; 
-          padding: 0.2rem 0.25rem !important; 
-          white-space: nowrap; 
-          border-right: 1px solid ${gridColorGlobal};
-        }
-        .tabla-personal tr th:first-child, .tabla-personal tr td:first-child { border-left: 1px solid ${gridColorGlobal};} 
-        .tabla-personal tr th:last-child, .tabla-personal tr td:last-child { border-right: 1px solid ${gridColorGlobal}; }
-        .tabla-personal .text-numeric { text-align: center; }
-        .estado-cumple { background-color: ${darkMode ? metallicColors.green_bg : 'rgba(25, 135, 84, 0.15)'} !important; color: ${darkMode ? metallicColors.green_text_light : metallicColors.green_text_dark} !important; font-weight: bold; }
-        .estado-no-cumple { background-color: ${darkMode ? metallicColors.red_bg : 'rgba(220, 53, 69, 0.15)'} !important; color: ${darkMode ? metallicColors.red_text_light : metallicColors.red_text_dark} !important; font-weight: bold; }
-        .prod-ejec-highlight { background-color: ${darkMode ? metallicColors.highlight_bg_dark : metallicColors.highlight_bg_light} !important; font-weight: bold; }
-        .table-responsive-custom-height { max-height: ${rowsPerPage === 'Todas' ? 'none' : '450px'}; overflow-y: auto; }
-        .persona-card-mobile { font-size: 0.75rem; }
-        .persona-card-mobile .card-title { font-size: 0.9rem; margin-bottom: 0.5rem; }
-        .persona-card-mobile .card-text { margin-bottom: 0.2rem; font-size: 0.7rem; }
-        .persona-card-mobile .card-text strong { min-width: 110px; display: inline-block; }
+    <div style={appContainerStyle}>
+      <style jsx global>{` /* MODIFICADO: sin {true} */
+        body { margin: 0; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-thumb { background-color: ${darkMode ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)'}; border-radius: 4px; }
+        ::-webkit-scrollbar-track { background-color: transparent; }
       `}</style>
-      <style>
-{`
-  .tabla-personal th {
-    cursor: pointer;
-    white-space: normal !important;
-    word-break: break-word !important;
-    vertical-align: middle;
-    text-align: center;
-    position: sticky;
-    top: 0;
-    z-index: 1;
-    background-color: ${cardBgGlobal};
-    border-right: 1px solid ${gridColorGlobal};
-    border-bottom: 2px solid ${gridColorGlobal};
-  }
-`}
-</style>
       
-      <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap">
-        <h1 className={`${textClassGlobal} h3`}>Reporte de Productividad del Personal</h1>
-        <div className="d-flex align-items-center">
-            <button className={`${buttonSecondaryClass} me-2`} onClick={() => setShowDataLabels(!showDataLabels)} title="Mostrar/Ocultar etiquetas en gráficos"> <i className={`bi ${showDataLabels ? 'bi-tag-fill' : 'bi-tag'}`}></i> {showDataLabels ? 'Ocultar' : 'Mostrar'} Etqt. </button>
-            <button className={buttonSecondaryClass} onClick={exportToExcel} disabled={filteredAndSortedData.length === 0}> <i className="bi bi-file-earmark-excel-fill me-2"></i>Exportar </button>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
+        <h1 style={{ fontSize: '1.5rem', fontWeight: '600', color: primaryTextColor, margin: 0 }}>Reporte de Productividad del Personal</h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <button style={buttonStyle} onClick={() => setShowDataLabels(!showDataLabels)} title="Mostrar/Ocultar etiquetas en gráficos"> 
+              <i className={`bi ${showDataLabels ? 'bi-tag-fill' : 'bi-tag'}`}></i> {showDataLabels ? 'Ocultar' : 'Mostrar'} Etqt. 
+            </button>
+            <button style={buttonStyle} onClick={exportToExcel} disabled={filteredAndSortedData.length === 0}> 
+              <i className="bi bi-file-earmark-excel-fill" style={{fontSize: '1em'}}></i> Exportar 
+            </button>
         </div>
       </div>
 
-      <div className={cardClass}> <div className="card-body"> <h5 className="card-title mb-3">Filtros</h5>
-          <div className="row g-2">
-            {/* Filtro por Fecha (ya es el primer nivel, pero se resetea todo al cambiarlo) */}
-            <div className="col-lg col-md-4 col-sm-6"> <label className="form-label form-label-sm">Fecha:</label> <input type="date" name="fecha" className={inputBgClass} value={filters.fecha} onChange={handleFilterChange} /> </div>
-            {/* Jefe de Campo (depende de Fecha) */}
-            <div className="col-lg col-md-4 col-sm-6"> <label className="form-label form-label-sm">Jefe de Campo:</label> <select name="jefe_campo" className={inputBgClass} value={filters.jefe_campo} onChange={handleFilterChange}> <option value="">Todos</option> {uniqueJefesCampo.map(e => <option key={e} value={e}>{e}</option>)} </select> </div>
-            {/* Lote (depende de Fecha y Jefe de Campo) */}
-            <div className="col-lg col-md-4 col-sm-6"> <label className="form-label form-label-sm">Lote:</label> <select name="lote" className={inputBgClass} value={filters.lote} onChange={handleFilterChange}> <option value="">Todos</option> {uniqueLotes.map(l => <option key={l} value={l}>{l}</option>)} </select> </div>
-            {/* Labor (depende de Fecha, Jefe de Campo y Lote) */}
-            <div className="col-lg col-md-4 col-sm-6"> <label className="form-label form-label-sm">Labor:</label> <select name="labor" className={inputBgClass} value={filters.labor} onChange={handleFilterChange}> <option value="">Todas</option> {uniqueLabores.map(l => <option key={l.cod} value={l.cod}>{l.descripcion_labor} ({l.cod})</option>)} </select> </div>
-            {/* Asistente (depende de Fecha, Jefe de Campo, Lote y Labor) */}
-            <div className="col-lg col-md-4 col-sm-6"> <label className="form-label form-label-sm">Asistente:</label> <select name="encargado" className={inputBgClass} value={filters.encargado} onChange={handleFilterChange}> <option value="">Todos</option> {uniqueEncargados.map(e => <option key={e} value={e}>{e}</option>)} </select> </div>
-            <div className="col-lg col-md-4 col-sm-6"> <label className="form-label form-label-sm">Estado:</label> <select name="estadoCalculado" className={inputBgClass} value={filters.estadoCalculado} onChange={handleFilterChange}> <option value="">Todos</option> <option value="CUMPLE">Cumple</option> <option value="NO CUMPLE">No Cumple</option> </select> </div>
-          </div>
-      </div></div>
+      <div style={cardStyle}> 
+        <h5 style={{ fontSize: '1.1rem', fontWeight: '600', marginBottom: '15px', color: primaryTextColor }}>Filtros</h5>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px' }}>
+          <div> <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.85rem', color: secondaryTextColor }}>Fecha:</label> <input type="date" name="fecha" style={inputStyle} value={filters.fecha} onChange={handleFilterChange} /> </div>
+          <div> <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.85rem', color: secondaryTextColor }}>Jefe de Campo:</label> <select name="jefe_campo" style={selectStyle} value={filters.jefe_campo} onChange={handleFilterChange}> <option value="">Todos</option> {uniqueJefesCampo.map(e => <option key={e} value={e}>{e}</option>)} </select> </div>
+          <div> <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.85rem', color: secondaryTextColor }}>Lote:</label> <select name="lote" style={selectStyle} value={filters.lote} onChange={handleFilterChange}> <option value="">Todos</option> {uniqueLotes.map(l => <option key={l} value={l}>{l}</option>)} </select> </div>
+          <div> <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.85rem', color: secondaryTextColor }}>Labor:</label> <select name="labor" style={selectStyle} value={filters.labor} onChange={handleFilterChange}> <option value="">Todas</option> {uniqueLabores.map(l => <option key={l.cod} value={l.cod}>{l.descripcion_labor} ({l.cod})</option>)} </select> </div>
+          <div> <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.85rem', color: secondaryTextColor }}>Asistente:</label> <select name="encargado" style={selectStyle} value={filters.encargado} onChange={handleFilterChange}> <option value="">Todos</option> {uniqueEncargados.map(e => <option key={e} value={e}>{e}</option>)} </select> </div>
+          <div> <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.85rem', color: secondaryTextColor }}>Estado:</label> <select name="estadoCalculado" style={selectStyle} value={filters.estadoCalculado} onChange={handleFilterChange}> <option value="">Todos</option> <option value="CUMPLE">Cumple</option> <option value="NO CUMPLE">No Cumple</option> </select> </div>
+        </div>
+      </div>
       
-      <div className="row mb-3">
-          <div className="col-lg-3 col-md-6"> <div className={`${cardClass} h-100`}> <div className="card-body">
-            <h6 className="card-title" style={{fontSize:'0.9rem'}}>Resumen Cumplimiento</h6>
-            <p className={textClassGlobal} style={{fontSize:'0.8rem', marginBottom:'0.25rem'}}>Total Registros: {filteredAndSortedData.length}</p>
-            <p className="text-success mb-1" style={{fontSize:'0.8rem'}}><strong>Cumple:</strong> {estadoSummary['CUMPLE']} ({filteredAndSortedData.length > 0 ? (estadoSummary['CUMPLE']/filteredAndSortedData.length*100).toFixed(1) : 0}%)</p>
-            <p className="text-danger mb-0" style={{fontSize:'0.8rem'}}><strong>No Cumple:</strong> {estadoSummary['NO CUMPLE']} ({filteredAndSortedData.length > 0 ? (estadoSummary['NO CUMPLE']/filteredAndSortedData.length*100).toFixed(1) : 0}%)</p>
-          </div></div></div>
-          <div className="col-lg-5 col-md-6"> <div className={`${cardClass} h-100`}> <div className="card-body d-flex flex-column justify-content-center">
-            { (filteredAndSortedData.length > 0 && (estadoSummary['CUMPLE'] > 0 || estadoSummary['NO CUMPLE'] > 0)) ? <div style={{maxHeight:'200px'}}> <Bar data={stackedBarEstadoPorAsistenteData} options={stackedBarOptions('Cumplimiento por Asistente', 'Nº Registros')} /> </div> : <p className="text-center fst-italic my-auto">No hay datos para el gráfico.</p> }
-          </div></div></div>
-          <div className="col-lg-4 col-md-12 mt-3 mt-lg-0"> <div className={`${cardClass} h-100`}> <div className="card-body d-flex flex-column justify-content-center">
-            { (filteredAndSortedData.length > 0 && (estadoSummary['CUMPLE'] > 0 || estadoSummary['NO CUMPLE'] > 0)) ? <div style={{maxHeight:'300px'}}> <Pie data={pieChartEstadoData} options={pieChartOptions('Distribución de Estado')} /> </div> : <p className="text-center fst-italic my-auto">No hay datos para el gráfico.</p> }
-          </div></div></div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '20px' }}>
+          <div style={{ ...cardStyle, padding: '15px' }}> 
+            <h6 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '10px', color: primaryTextColor }}>Resumen Cumplimiento</h6>
+            <p style={{ fontSize: '0.85rem', marginBottom: '5px', color: secondaryTextColor }}>Total Registros: {filteredAndSortedData.length}</p>
+            <p style={{ fontSize: '0.85rem', marginBottom: '3px', color: getStatusTextColor('CUMPLE', darkMode) }}>
+                <strong>Cumple:</strong> {estadoSummary['CUMPLE']} ({filteredAndSortedData.length > 0 ? (estadoSummary['CUMPLE']/filteredAndSortedData.length*100).toFixed(1) : 0}%)
+            </p>
+            <p style={{ fontSize: '0.85rem', marginBottom: '0', color: getStatusTextColor('NO CUMPLE', darkMode) }}>
+                <strong>No Cumple:</strong> {estadoSummary['NO CUMPLE']} ({filteredAndSortedData.length > 0 ? (estadoSummary['NO CUMPLE']/filteredAndSortedData.length*100).toFixed(1) : 0}%)
+            </p>
+          </div>
+          <div style={{ ...cardStyle, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}> 
+            { (filteredAndSortedData.length > 0 && (estadoSummary['CUMPLE'] > 0 || estadoSummary['NO CUMPLE'] > 0)) ? 
+              <div style={{maxHeight:'200px', width: '100%'}}> 
+                <Bar data={stackedBarEstadoPorAsistenteData} options={stackedBarOptions('Cumplimiento por Asistente', 'Nº Registros')} /> 
+              </div> : 
+              <p style={{ textAlign: 'center', fontStyle: 'italic', color: secondaryTextColor }}>No hay datos para el gráfico.</p> 
+            }
+          </div>
+          <div style={{ ...cardStyle, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+            { (filteredAndSortedData.length > 0 && (estadoSummary['CUMPLE'] > 0 || estadoSummary['NO CUMPLE'] > 0)) ? 
+              <div style={{maxHeight:'300px', width: '100%'}}> 
+                <Pie data={pieChartEstadoData} options={pieChartOptions('Distribución de Estado')} /> 
+              </div> : 
+              <p style={{ textAlign: 'center', fontStyle: 'italic', color: secondaryTextColor }}>No hay datos para el gráfico.</p> 
+            }
+          </div>
       </div>
 
-      <div className="row mb-3">
-        <div className="col-lg-6 mb-3 mb-lg-0">
-            <div className={cardClass}> <div className="card-header"><h6 className="mb-0">Resumen por Asistente (Encargado)</h6></div>
-                <div className="card-body table-responsive" style={{maxHeight: 'calc(220px + 220px + 1.5rem)', overflowY:'auto'}}>
-                    <table className={`${tableClass} tabla-personal`}>
-                        <thead><tr>
-                            <th onClick={() => handleSortAsistente('encargado')}>Asistente {getSortIndicatorAsistente('encargado')}</th>
-                            <th onClick={() => handleSortAsistente('total')} className="text-numeric">Total Reg. {getSortIndicatorAsistente('total')}</th>
-                            <th onClick={() => handleSortAsistente('cumple')} className="text-numeric">Cumple {getSortIndicatorAsistente('cumple')}</th>
-                            <th onClick={() => handleSortAsistente('noCumple')} className="text-numeric">No Cumple {getSortIndicatorAsistente('noCumple')}</th>
-                            <th onClick={() => handleSortAsistente('minProdHora')} className="text-numeric">Min Prod/Hr {getSortIndicatorAsistente('minProdHora')}</th>
-                            <th onClick={() => handleSortAsistente('maxProdHora')} className="text-numeric">Max Prod/Hr {getSortIndicatorAsistente('maxProdHora')}</th>
-                        </tr></thead>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px', marginBottom: '20px' }}>
+        <div>
+            <div style={{ ...cardStyle, padding: 0 }}> 
+                <div style={{ padding: '15px', borderBottom: `1px solid ${borderColor}` }}>
+                    <h6 style={{ fontSize: '1rem', fontWeight: '600', margin: 0, color: primaryTextColor }}>Resumen por Asistente (Encargado)</h6>
+                </div>
+                <div style={{ maxHeight: '490px', overflowY:'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                        <thead>
+                            <tr>
+                                <th style={tableHeaderStyle} onClick={() => handleSortAsistente('encargado')}>Asistente {getSortIndicatorAsistente('encargado')}</th>
+                                <th style={{...tableHeaderStyle, ...numericCellStyle}} onClick={() => handleSortAsistente('total')}>Total Reg. {getSortIndicatorAsistente('total')}</th>
+                                <th style={{...tableHeaderStyle, ...numericCellStyle}} onClick={() => handleSortAsistente('cumple')}>Cumple {getSortIndicatorAsistente('cumple')}</th>
+                                <th style={{...tableHeaderStyle, ...numericCellStyle}} onClick={() => handleSortAsistente('noCumple')}>No Cumple {getSortIndicatorAsistente('noCumple')}</th>
+                                <th style={{...tableHeaderStyle, ...numericCellStyle}} onClick={() => handleSortAsistente('minProdHora')}>Min Prod/Hr {getSortIndicatorAsistente('minProdHora')}</th>
+                                <th style={{...tableHeaderStyle, ...numericCellStyle}} onClick={() => handleSortAsistente('maxProdHora')}>Max Prod/Hr {getSortIndicatorAsistente('maxProdHora')}</th>
+                            </tr>
+                        </thead>
                         <tbody>
-                            {resumenPorAsistente.map(a => ( <tr key={a.encargado}>
-                                <td>{a.encargado}</td> <td className="text-numeric">{a.total}</td>
-                                <td className="text-success text-numeric">{a.cumple}</td> <td className="text-danger text-numeric">{a.noCumple}</td>
-                                <td className="text-numeric">{a.minProdHora.toFixed(2)}</td> <td className="text-numeric">{a.maxProdHora.toFixed(2)}</td>
+                            {resumenPorAsistente.map(a => ( 
+                            <tr key={a.encargado}>
+                                <td style={tableRowStyle}>{a.encargado}</td> 
+                                <td style={{...tableRowStyle, ...numericCellStyle}}>{a.total}</td>
+                                <td style={{...tableRowStyle, ...numericCellStyle, color: getStatusTextColor('CUMPLE', darkMode)}}>{a.cumple}</td> 
+                                <td style={{...tableRowStyle, ...numericCellStyle, color: getStatusTextColor('NO CUMPLE', darkMode)}}>{a.noCumple}</td>
+                                <td style={{...tableRowStyle, ...numericCellStyle}}>{a.minProdHora.toFixed(2)}</td> 
+                                <td style={{...tableRowStyle, ...numericCellStyle}}>{a.maxProdHora.toFixed(2)}</td>
                             </tr> ))}
-                            {resumenPorAsistente.length === 0 && <tr><td colSpan="6" className="text-center fst-italic">N/A</td></tr>}
+                            {resumenPorAsistente.length === 0 && <tr><td colSpan="6" style={{...tableRowStyle, textAlign: 'center', fontStyle: 'italic'}}>N/A</td></tr>}
                         </tbody>
                     </table>
                 </div>
             </div>
         </div>
-        <div className="col-lg-6">
-            <div className={cardClass}> <div className="card-header"><h6 className="mb-0">Top 5 Altos (PROD/HORA EJEC)</h6></div>
-                <div className="card-body table-responsive" style={{maxHeight: '220px', overflowY:'auto'}}>
-                    <table className={`${tableClass} tabla-personal`}><thead><tr><th>#</th><th>Trabajador</th><th>DNI</th><th className="text-numeric">PROD/HR EJEC</th></tr></thead>
-                    <tbody>{rankingProdHoraEjec.mejores.map((t, idx) => ( <tr key={t.dni + '-mejor' + idx}><td>{idx+1}</td><td>{t.trabajador}</td><td>{t.dni}</td><td className="text-numeric">{t.prodHoraEjec.toFixed(2)}</td></tr> ))} {rankingProdHoraEjec.mejores.length === 0 && <tr><td colSpan="4" className="text-center fst-italic">N/A</td></tr>}</tbody>
+        <div>
+            <div style={{ ...cardStyle, padding: 0 }}> 
+                <div style={{ padding: '15px', borderBottom: `1px solid ${borderColor}` }}>
+                    <h6 style={{ fontSize: '1rem', fontWeight: '600', margin: 0, color: primaryTextColor }}>Top 5 Altos (PROD/HORA EJEC)</h6>
+                </div>
+                <div style={{ maxHeight: '220px', overflowY:'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                        <thead><tr>
+                            <th style={tableHeaderStyle}>#</th>
+                            <th style={tableHeaderStyle}>Trabajador</th>
+                            <th style={tableHeaderStyle}>DNI</th>
+                            <th style={{...tableHeaderStyle, ...numericCellStyle}}>PROD/HR EJEC</th>
+                        </tr></thead>
+                        <tbody>
+                            {rankingProdHoraEjec.mejores.map((t, idx) => ( 
+                            <tr key={t.dni + '-mejor' + idx}>
+                                <td style={tableRowStyle}>{idx+1}</td>
+                                <td style={tableRowStyle}>{t.trabajador}</td>
+                                <td style={tableRowStyle}>{t.dni}</td>
+                                <td style={{...tableRowStyle, ...numericCellStyle}}>{t.prodHoraEjec.toFixed(2)}</td>
+                            </tr> ))} 
+                            {rankingProdHoraEjec.mejores.length === 0 && <tr><td colSpan="4" style={{...tableRowStyle, textAlign: 'center', fontStyle: 'italic'}}>N/A</td></tr>}
+                        </tbody>
                     </table>
                 </div>
             </div>
-            <div className={`${cardClass} mt-3`}> <div className="card-header"><h6 className="mb-0">Top 5 Bajos (PROD/HORA EJEC)</h6></div>
-                <div className="card-body table-responsive" style={{maxHeight: '220px', overflowY:'auto'}}>
-                    <table className={`${tableClass} tabla-personal`}><thead><tr><th>#</th><th>Trabajador</th><th>DNI</th><th className="text-numeric">PROD/HR EJEC</th></tr></thead>
-                    <tbody>{rankingProdHoraEjec.peores.map((t, idx) => ( <tr key={t.dni + '-peor' + idx}><td>{idx+1}</td><td>{t.trabajador}</td><td>{t.dni}</td><td className="text-numeric">{t.prodHoraEjec.toFixed(2)}</td></tr> ))} {rankingProdHoraEjec.peores.length === 0 && <tr><td colSpan="4" className="text-center fst-italic">N/A</td></tr>}</tbody>
+            <div style={{ ...cardStyle, padding: 0, marginTop: '20px' }}> 
+                <div style={{ padding: '15px', borderBottom: `1px solid ${borderColor}` }}>
+                    <h6 style={{ fontSize: '1rem', fontWeight: '600', margin: 0, color: primaryTextColor }}>Top 5 Bajos (PROD/HORA EJEC)</h6>
+                </div>
+                <div style={{ maxHeight: '220px', overflowY:'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                        <thead><tr>
+                            <th style={tableHeaderStyle}>#</th>
+                            <th style={tableHeaderStyle}>Trabajador</th>
+                            <th style={tableHeaderStyle}>DNI</th>
+                            <th style={{...tableHeaderStyle, ...numericCellStyle}}>PROD/HR EJEC</th>
+                        </tr></thead>
+                        <tbody>
+                            {rankingProdHoraEjec.peores.map((t, idx) => ( 
+                            <tr key={t.dni + '-peor' + idx}>
+                                <td style={tableRowStyle}>{idx+1}</td>
+                                <td style={tableRowStyle}>{t.trabajador}</td>
+                                <td style={tableRowStyle}>{t.dni}</td>
+                                <td style={{...tableRowStyle, ...numericCellStyle}}>{t.prodHoraEjec.toFixed(2)}</td>
+                            </tr> ))} 
+                            {rankingProdHoraEjec.peores.length === 0 && <tr><td colSpan="4" style={{...tableRowStyle, textAlign: 'center', fontStyle: 'italic'}}>N/A</td></tr>}
+                        </tbody>
                     </table>
                 </div>
             </div>
         </div>
       </div>
 
-      <div className={`${cardClass} mb-4`}>
-        <div className="card-header d-flex justify-content-between align-items-center">
-            <h5 className="card-title mb-0">Detalle de Productividad del Personal</h5>
-            <div> <label htmlFor="rowsPerPage" className="form-label form-label-sm me-2 mb-0 align-middle">Filas:</label>
-                <select id="rowsPerPage" name="rowsPerPage" className={inputBgClass} style={{width:'auto', display:'inline-block'}} value={rowsPerPage} onChange={(e) => setRowsPerPage(e.target.value)}>
-                    <option value="10">10</option> <option value="25">25</option> <option value="50">50</option> <option value="100">100</option> <option value="Todas">Todas</option>
+      <div style={{ ...cardStyle, padding: 0 }}>
+        <div style={{ padding: '15px', borderBottom: `1px solid ${borderColor}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h5 style={{ fontSize: '1.1rem', fontWeight: '600', margin: 0, color: primaryTextColor }}>Detalle de Productividad del Personal</h5>
+            <div style={{ display: 'flex', alignItems: 'center' }}> 
+                <label htmlFor="rowsPerPage" style={{ fontSize: '0.85rem', color: secondaryTextColor, marginRight: '10px', margin: 0 }}>Filas:</label>
+                <select id="rowsPerPage" name="rowsPerPage" style={{...selectStyle, width:'auto', minWidth:'80px'}} value={rowsPerPage} onChange={(e) => setRowsPerPage(e.target.value)}>
+                    <option value="10">10</option> 
+                    <option value="25">25</option> 
+                    <option value="50">50</option> 
+                    <option value="100">100</option> 
+                    <option value="Todas">Todas</option>
                 </select>
             </div>
         </div>
-        <div className="card-body table-responsive table-responsive-custom-height d-none d-md-block">
-          <table className={`${tableClass} tabla-personal`}>
-            <thead> <tr>
-                <th onClick={() => handleSort('fecha_norm')}>FECHA {getSortIndicator('fecha_norm')}</th>
-                <th onClick={() => handleSort('encargado')}>ASISTENTE {getSortIndicator('encargado')}</th>
-                <th onClick={() => handleSort('trabajador')}>TRABAJADOR {getSortIndicator('trabajador')}</th>
-                <th onClick={() => handleSort('min')} className="text-numeric">MIN {getSortIndicator('min')}</th>
-                <th onClick={() => handleSort('max')} className="text-numeric">MAX {getSortIndicator('max')}</th>
-                <th onClick={() => handleSort('horas_avance1')} className="text-numeric">HRS. TRAB. {getSortIndicator('horas_avance1')}</th>
-                <th onClick={() => handleSort('avance1')} className="text-numeric">PLANTAS TRAB. {getSortIndicator('avance1')}</th>
-                <th onClick={() => handleSort('proyeccion_x_hora_prom')} className="text-numeric">PROD/HR PROY {getSortIndicator('proyeccion_x_hora_prom')}</th>
-                <th onClick={() => handleSort('prodHoraEjec')} className="prod-ejec-highlight text-numeric">PROD/HR EJEC {getSortIndicator('prodHoraEjec')}</th>
-                <th onClick={() => handleSort('estadoCalculado')}>ESTADO {getSortIndicator('estadoCalculado')}</th>
-                <th onClick={() => handleSort('comentario')}>COMENTARIO {getSortIndicator('comentario')}</th>
-            </tr></thead>
-            <tbody>
-              {displayedData.map((item, index) => (
-                <tr key={item.id ? `${item.id}-${index}` : `${item.parte_diario}-${item.dni}-${index}-${item.labor}-${item.lote}`}>
-                  <td>{item.fecha_norm}</td>
-                  <td>{item.encargado}</td>
-                  <td>{item.trabajador}</td>
-                  <td className="text-numeric">{item.min}</td>
-                  <td className="text-numeric">{item.max}</td>
-                  <td className="text-numeric">{(parseFloat(item.horas_avance1) || 0).toFixed(2)}</td>
-                  <td className="text-numeric">{parseFloat(item.avance1) || 0}</td>
-                  <td className="text-numeric">{(parseFloat(item.proyeccion_x_hora_prom) || 0).toFixed(2)}</td>
-                  <td className="prod-ejec-highlight text-numeric">{item.prodHoraEjec.toFixed(2)}</td>
-                  <td style={getStatusCellStyle(item.estadoCalculado, darkMode, textClassGlobal)}>{item.estadoCalculado}</td>
-                  <td>{item.comentario}</td>
-                </tr>
-              ))}
-              {displayedData.length === 0 && (
+        <div style={{ overflowX: 'auto', maxHeight: rowsPerPage === 'Todas' ? 'none' : '450px' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '800px' }}>
+            <thead style={{ position: 'sticky', top: 0, zIndex: 1 }}> 
                 <tr>
-                  <td colSpan="11" className="text-center fst-italic">No hay datos para mostrar.</td>
+                    <th style={{...tableHeaderStyle, borderLeft: `1px solid ${borderColor}`}} onClick={() => handleSort('fecha_norm')}>FECHA {getSortIndicator('fecha_norm')}</th>
+                    <th style={tableHeaderStyle} onClick={() => handleSort('encargado')}>ASISTENTE {getSortIndicator('encargado')}</th>
+                    <th style={tableHeaderStyle} onClick={() => handleSort('trabajador')}>TRABAJADOR {getSortIndicator('trabajador')}</th>
+                    <th style={{...tableHeaderStyle, ...numericCellStyle}} onClick={() => handleSort('min')}>MIN {getSortIndicator('min')}</th>
+                    <th style={{...tableHeaderStyle, ...numericCellStyle}} onClick={() => handleSort('max')}>MAX {getSortIndicator('max')}</th>
+                    <th style={{...tableHeaderStyle, ...numericCellStyle}} onClick={() => handleSort('horas_avance1')}>HRS. TRAB. {getSortIndicator('horas_avance1')}</th>
+                    <th style={{...tableHeaderStyle, ...numericCellStyle}} onClick={() => handleSort('avance1')}>PLANTAS TRAB. {getSortIndicator('avance1')}</th>
+                    <th style={{...tableHeaderStyle, ...numericCellStyle}} onClick={() => handleSort('proyeccion_x_hora_prom')}>PROD/HR PROY {getSortIndicator('proyeccion_x_hora_prom')}</th>
+                    <th style={{...tableHeaderStyle, ...highlightCellStyle}} onClick={() => handleSort('prodHoraEjec')}>PROD/HR EJEC {getSortIndicator('prodHoraEjec')}</th>
+                    <th style={tableHeaderStyle} onClick={() => handleSort('estadoCalculado')}>ESTADO {getSortIndicator('estadoCalculado')}</th>
+                    <th style={{...tableHeaderStyle, borderRight: `1px solid ${borderColor}`}} onClick={() => handleSort('comentario')}>COMENTARIO {getSortIndicator('comentario')}</th>
+                </tr>
+            </thead>
+            <tbody>
+              {displayedData.length > 0 ? (
+                displayedData.map((item, index) => (
+                  <tr key={item.id ? `${item.id}-${index}` : `${item.parte_diario}-${item.dni}-${index}-${item.labor}-${item.lote}`}>
+                    <td style={{...tableRowStyle, borderLeft: `1px solid ${darkMode ? 'rgba(80,80,80,0.2)' : 'rgba(200,200,200,0.4)'}`}}>{item.fecha_norm}</td>
+                    <td style={tableRowStyle}>{item.encargado}</td>
+                    <td style={tableRowStyle}>{item.trabajador}</td>
+                    <td style={{...tableRowStyle, ...numericCellStyle}}>{item.min}</td>
+                    <td style={{...tableRowStyle, ...numericCellStyle}}>{item.max}</td>
+                    <td style={{...tableRowStyle, ...numericCellStyle}}>{(parseFloat(item.horas_avance1) || 0).toFixed(2)}</td>
+                    <td style={{...tableRowStyle, ...numericCellStyle}}>{parseFloat(item.avance1) || 0}</td>
+                    <td style={{...tableRowStyle, ...numericCellStyle}}>{(parseFloat(item.proyeccion_x_hora_prom) || 0).toFixed(2)}</td>
+                    <td style={{...tableRowStyle, ...highlightCellStyle, ...numericCellStyle}}>{item.prodHoraEjec.toFixed(2)}</td>
+                    <td style={{...tableRowStyle, backgroundColor: getStatusBgColor(item.estadoCalculado, darkMode), color: getStatusTextColor(item.estadoCalculado, darkMode), fontWeight: 'bold'}}>{item.estadoCalculado}</td>
+                    <td style={{...tableRowStyle, borderRight: `1px solid ${darkMode ? 'rgba(80,80,80,0.2)' : 'rgba(200,200,200,0.4)'}`}}>{item.comentario}</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="11" style={{...tableRowStyle, textAlign: 'center', fontStyle: 'italic'}}>No hay datos para mostrar.</td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
-        <div className="d-md-none px-2">
+        
+        {/* Mobile View: Cards (Hidden on MD and up) */}
+        <div style={{ display: 'none' }}> 
             {displayedData.map((item, index) => (
-                <div key={`card-${item.id || index}-${item.dni}-${item.labor}`} className={`${cardClass} mb-2 persona-card-mobile`}>
-                    <div className="card-body py-2 px-3">
-                        <h6 className={`${textClassGlobal} card-title mb-1`}>{item.trabajador} <span className="text-muted small">({item.dni})</span></h6>
-                        <p className="card-text"><strong>Fecha:</strong> {item.fecha_norm}</p>
-                        <p className="card-text"><strong>Asistente:</strong> {item.encargado || 'N/A'}</p>
-                        <p className="card-text"><strong>Jefe C.:</strong> {item.jefe_campo || 'N/A'}</p>
-                        <p className="card-text"><strong>Labor:</strong> {item.descripcion_labor || 'N/A'} ({item.labor || 'N/A'})</p>
-                        <p className="card-text"><strong>Lote:</strong> {item.lote || 'N/A'}</p>
-                        <hr className="my-1"/>
-                        <p className="card-text"><strong>Min/Max:</strong> {item.min !== null ? item.min : '-'}/{item.max !== null ? item.max : '-'}</p>
-                        <p className="card-text"><strong>Hrs. Trab.:</strong> {(parseFloat(item.horas_avance1) || 0).toFixed(2)}</p>
-                        <p className="card-text"><strong>Plantas Trab.:</strong> {parseFloat(item.avance1) || 0}</p>
-                        <p className="card-text"><strong>Prod/Hr Proy:</strong> {(parseFloat(item.proyeccion_x_hora_prom) || 0).toFixed(2)}</p>
-                        <p className="card-text"><strong>Prod/Hr Ejec:</strong> <span className="prod-ejec-highlight">{item.prodHoraEjec.toFixed(2)}</span></p>
-                        <p className="card-text mb-0"><strong>Estado:</strong> <span style={getStatusCellStyle(item.estadoCalculado, darkMode, textClassGlobal)}>{item.estadoCalculado}</span></p>
-                        {item.comentario && <p className="card-text mt-1 fst-italic"><small><strong>Comentario:</strong> {item.comentario}</small></p>}
-                    </div>
+                <div key={`card-${item.id || index}-${item.dni}-${item.labor}`} style={mobileCardStyle}>
+                    <h6 style={mobileCardTitleStyle}>{item.trabajador} <span style={{ color: secondaryTextColor, fontSize: '0.9em' }}>({item.dni})</span></h6>
+                    <p style={mobileCardTextStyle}><strong style={mobileCardStrongStyle}>Fecha:</strong> {item.fecha_norm}</p>
+                    <p style={mobileCardTextStyle}><strong style={mobileCardStrongStyle}>Asistente:</strong> {item.encargado || 'N/A'}</p>
+                    <p style={mobileCardTextStyle}><strong style={mobileCardStrongStyle}>Jefe C.:</strong> {item.jefe_campo || 'N/A'}</p>
+                    <p style={mobileCardTextStyle}><strong style={mobileCardStrongStyle}>Labor:</strong> {item.descripcion_labor || 'N/A'} ({item.labor || 'N/A'})</p>
+                    <p style={mobileCardTextStyle}><strong style={mobileCardStrongStyle}>Lote:</strong> {item.lote || 'N/A'}</p>
+                    <div style={{ borderBottom: `1px solid ${borderColor}`, margin: '8px 0' }} />
+                    <p style={mobileCardTextStyle}><strong style={mobileCardStrongStyle}>Min/Max:</strong> {item.min !== null ? item.min : '-'}/{item.max !== null ? item.max : '-'}</p>
+                    <p style={mobileCardTextStyle}><strong style={mobileCardStrongStyle}>Hrs. Trab.:</strong> {(parseFloat(item.horas_avance1) || 0).toFixed(2)}</p>
+                    <p style={mobileCardTextStyle}><strong style={mobileCardStrongStyle}>Plantas Trab.:</strong> {parseFloat(item.avance1) || 0}</p>
+                    <p style={mobileCardTextStyle}><strong style={mobileCardStrongStyle}>Prod/Hr Proy:</strong> {(parseFloat(item.proyeccion_x_hora_prom) || 0).toFixed(2)}</p>
+                    <p style={mobileCardTextStyle}><strong style={mobileCardStrongStyle}>Prod/Hr Ejec:</strong> <span style={highlightCellStyle}>{item.prodHoraEjec.toFixed(2)}</span></p>
+                    <p style={{...mobileCardTextStyle, marginBottom: 0}}><strong style={mobileCardStrongStyle}>Estado:</strong> <span style={{backgroundColor: getStatusBgColor(item.estadoCalculado, darkMode), color: getStatusTextColor(item.estadoCalculado, darkMode), fontWeight: 'bold', padding: '2px 6px', borderRadius: '4px'}}>{item.estadoCalculado}</span></p>
+                    {item.comentario && <p style={{...mobileCardTextStyle, marginTop: '5px', fontStyle: 'italic', fontSize: '0.75rem'}}><strong style={{minWidth: 'auto'}}>Comentario:</strong> {item.comentario}</p>}
                 </div>
             ))}
-            {displayedData.length === 0 && <p className="text-center fst-italic">No hay datos para mostrar.</p>}
+            {displayedData.length === 0 && <p style={{ textAlign: 'center', fontStyle: 'italic', color: secondaryTextColor, padding: '15px' }}>No hay datos para mostrar.</p>}
         </div>
 
       </div>
+
+      {/* Media Queries for responsiveness */}
+      <style jsx>{` /* MODIFICADO: sin {true} */
+        @media (min-width: 768px) {
+          div > div:nth-child(5) > div:nth-child(2) {
+            display: block !important;
+          }
+          div > div:nth-child(5) > div:nth-child(3) {
+            display: none !important;
+          }
+        }
+
+        @media (max-width: 767.98px) {
+          div > div:nth-child(5) > div:nth-child(2) {
+            display: none !important;
+          }
+          div > div:nth-child(5) > div:nth-child(3) {
+            display: block !important;
+          }
+
+          div[style*="gridTemplateColumns"] {
+            grid-template-columns: 1fr; 
+          }
+          
+          div[style*="minmax(280px, 1fr)"] {
+              grid-template-columns: 1fr; 
+          }
+
+          div[style*="minmax(300px, 1fr)"] {
+              grid-template-columns: 1fr; 
+          }
+
+          h1 {
+            font-size: 1.2rem !important;
+            text-align: center;
+            width: 100%;
+            margin-bottom: 15px !important;
+          }
+          div[style*="justify-content: space-between"] {
+              flex-direction: column;
+              align-items: center;
+          }
+        }
+      `}</style>
     </div>
   );
 }

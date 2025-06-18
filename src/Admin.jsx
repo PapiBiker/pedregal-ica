@@ -291,8 +291,11 @@ function Admin({ setIsAuthenticated, darkMode }) {
                         <option value="">Seleccione un perfil</option>
                         {/* Puedes predefinir perfiles o generarlos dinámicamente si tienes muchos */}
                         <option value="admin">Admin</option>
-                        <option value="operador">Operador</option>
+                        <option value="apoyo">Apoyo</option> 
+                        <option value="gerente">Gerente</option>
+                        <option value="jefe_campo">Jefe de Campo</option> 
                         <option value="supervisor">Supervisor</option>
+                        <option value="usuario">Usuario</option>
                         {/* Agrega más opciones de perfil según sea necesario */}
                         {/* También podrías generar estas opciones dinámicamente si los perfiles se obtienen de una API */}
                     </select>
